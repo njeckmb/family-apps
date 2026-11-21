@@ -28,10 +28,19 @@ button,[role="button"],select,summary,input:not([type="checkbox"],[type="radio"]
 button{font:inherit;cursor:pointer;color:inherit;background:none;border:none}
 .font-display{font-family:var(--font-display)}
 header{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--border);padding-top:env(safe-area-inset-top)}
-nav{max-width:48rem;margin:0 auto;display:flex;align-items:center;gap:.5rem;padding:.6rem 1rem}
-nav .navbtn{border-radius:.5rem;padding:.5rem .9rem;font-weight:600}
-nav .navbtn.active{background:var(--accent);color:var(--accent-ink)}
+nav{max-width:48rem;margin:0 auto;padding:.7rem 1rem .85rem}
+.brandrow{display:flex;align-items:baseline;justify-content:space-between;gap:1rem}
+.brand{font-family:var(--font-display);font-size:1.2rem;font-weight:700}
+.brand .brand-piece{color:var(--accent)}
+#navCount{font-size:.88rem;white-space:nowrap}
+.tabs{display:flex;gap:.3rem;margin-top:.65rem;background:var(--surface-2);border:1px solid var(--border);border-radius:999px;padding:.3rem}
+.tabs .navbtn{flex:1;border-radius:999px;padding:.55rem .9rem;font-weight:600;color:var(--dim);transition:background .25s ease,color .25s ease,box-shadow .25s ease}
+.tabs .navbtn.active{background:var(--accent);color:var(--accent-ink);box-shadow:0 2px 8px rgba(0,0,0,.18)}
 main{max-width:48rem;margin:0 auto;padding:1.25rem 1rem 2.5rem}
+#app.page-enter{animation:pageIn .3s ease both}
+@keyframes pageIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.page-kicker{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--brass);margin-bottom:.35rem}
+@media (prefers-reduced-motion: reduce){#app.page-enter{animation:none}.tabs .navbtn{transition:none}}
 h1,h2,h3,h4{font-family:var(--font-display);line-height:1.2;margin:0}
 p{margin:0}
 .dim{color:var(--dim)}
@@ -61,6 +70,7 @@ p{margin:0}
 .piece.w{color:#faf7ee;text-shadow:0 0 2px #222,0 1px 2px rgba(0,0,0,.55)}
 .piece.b{color:#191919;text-shadow:0 0 2px #ddd,0 1px 1px rgba(255,255,255,.25)}
 .arrows{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5}
+.anim-piece{position:absolute;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:6}
 .phase-tabs{display:flex;gap:.4rem;overflow-x:auto;padding-bottom:.3rem;margin-top:1rem;scrollbar-width:none}
 .phase-tabs::-webkit-scrollbar{display:none}
 .phase-tab{flex-shrink:0;text-align:left;border:1px solid var(--border);background:var(--surface);border-radius:.5rem;padding:.5rem .75rem}
@@ -82,9 +92,14 @@ details.install ol{margin:.6rem 0 0;padding-left:1.3rem;line-height:1.7;font-siz
 </head>
 <body>
 <header><nav aria-label="Main">
-  <button type="button" id="navHome" class="navbtn">♞ Stages</button>
-  <button type="button" id="navStats" class="navbtn">My stats</button>
-  <span class="dim" id="navCount" style="margin-left:auto;font-size:.9rem"></span>
+  <div class="brandrow">
+    <span class="brand"><span class="brand-piece">♞</span> Chess Trainer</span>
+    <span class="dim" id="navCount"></span>
+  </div>
+  <div class="tabs" role="tablist" aria-label="Pages">
+    <button type="button" id="navHome" class="navbtn" role="tab" aria-selected="true">♞ Stages</button>
+    <button type="button" id="navStats" class="navbtn" role="tab" aria-selected="false">📊 My stats</button>
+  </div>
 </nav></header>
 <main id="app"></main>
 
@@ -96,17 +111,117 @@ function tone(ac,f1,f2,t,d,type,peak){const o=ac.createOscillator(),g=ac.createG
 function sfxMove(){const ac=audioCtx();if(!ac)return;const t=ac.currentTime;tone(ac,210,95,t,0.09,"triangle",0.22);tone(ac,640,320,t,0.03,"sine",0.05);}
 function sfxSuccess(){const ac=audioCtx();if(!ac)return;const t=ac.currentTime;tone(ac,659.25,659.25,t,0.16,"sine",0.16);tone(ac,987.77,987.77,t+0.11,0.24,"sine",0.16);}
 function sfxWarning(){const ac=audioCtx();if(!ac)return;const t=ac.currentTime;tone(ac,196,185,t,0.14,"square",0.07);tone(ac,147,139,t+0.13,0.2,"square",0.07);}
-/* Listen via device speech synthesis */
+/* ============ Listen: Kokoro neural voice (runs 100% in the browser, free, no key) ============
+   Primary: kokoro-js (Kokoro-82M, Apache-2.0) via transformers.js, loaded lazily from CDN on
+   first Listen tap. The q8 model (~92 MB) + voice (~0.5 MB) download once and are cached by
+   the browser. Fallback: device speechSynthesis with best-voice selection, so Listen always works. */
+const KOKORO_SRC="https://cdn.jsdelivr.net/npm/kokoro-js@1.2.1/dist/kokoro.web.js";
+const KOKORO_MODEL="onnx-community/Kokoro-82M-v1.0-ONNX";
+const KOKORO_VOICE="af_heart";
 let speakingBtn=null;
-function speakText(text,btn){
-  if(!("speechSynthesis" in window)){return;}
-  if(speakingBtn===btn && speechSynthesis.speaking){speechSynthesis.cancel();if(btn)btn.textContent="🔊 Listen";speakingBtn=null;return;}
-  speechSynthesis.cancel();
-  const u=new SpeechSynthesisUtterance(text.replace(/\s+/g," ").trim());
-  u.rate=1;
-  if(btn){btn.textContent="⏸ Pause";speakingBtn=btn;}
-  u.onend=u.onerror=function(){if(btn)btn.textContent="🔊 Listen";if(speakingBtn===btn)speakingBtn=null;};
+let _kokoro=null,_kokoroPromise=null,_kokoroFailed=false;
+let _player=null,_playSeq=0,_isSpeaking=false;
+const _audioCache=new Map();
+function _playerEl(){if(!_player){_player=new Audio();_player.preload="auto";}return _player;}
+function stopSpeaking(){
+  _playSeq++;_isSpeaking=false;
+  if(_player){try{_player.pause();}catch(e){}}
+  if(window.speechSynthesis){try{speechSynthesis.cancel();}catch(e){}}
+  if(speakingBtn){speakingBtn.textContent="🔊 Listen";speakingBtn=null;}
+}
+function loadKokoro(){
+  if(_kokoro)return Promise.resolve(_kokoro);
+  if(_kokoroFailed)return Promise.reject(new Error("Kokoro unavailable"));
+  if(!_kokoroPromise){
+    _kokoroPromise=Promise.resolve().then(function(){return import(KOKORO_SRC);}).then(function(mod){
+      return mod.KokoroTTS.from_pretrained(KOKORO_MODEL,{dtype:"q8",device:"wasm"});
+    }).then(function(tts){_kokoro=tts;return tts;},function(err){_kokoroFailed=true;_kokoroPromise=null;throw err;});
+  }
+  return _kokoroPromise;
+}
+function splitForSpeech(text){
+  const clean=text.replace(/\s+/g," ").trim();
+  const parts=clean.match(/[^.!?]+[.!?]+["']?|[^.!?]+$/g)||[clean];
+  const chunks=[];
+  parts.forEach(function(s){
+    s=s.trim();if(!s)return;
+    while(s.length>280){let cut=s.lastIndexOf(", ",279);if(cut<80)cut=s.lastIndexOf(" ",279);if(cut<80)cut=280;chunks.push(s.slice(0,cut).trim());s=s.slice(cut).trim();}
+    if(s)chunks.push(s);
+  });
+  return chunks.length?chunks:[clean];
+}
+function wavBlobFromRaw(audio){
+  if(audio&&typeof audio.toBlob==="function")return audio.toBlob();
+  const samples=audio&&(audio.audio||audio.data);const rate=(audio&&audio.sampling_rate)||24000;
+  if(!samples)throw new Error("No audio data returned");
+  const buf=new ArrayBuffer(44+samples.length*2);const v=new DataView(buf);
+  function wstr(off,str){for(let i=0;i<str.length;i++)v.setUint8(off+i,str.charCodeAt(i));}
+  wstr(0,"RIFF");v.setUint32(4,36+samples.length*2,true);wstr(8,"WAVE");wstr(12,"fmt ");
+  v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,rate,true);
+  v.setUint32(28,rate*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);wstr(36,"data");
+  v.setUint32(40,samples.length*2,true);
+  for(let i=0;i<samples.length;i++){const s=Math.max(-1,Math.min(1,samples[i]));v.setInt16(44+i*2,s<0?s*0x8000:s*0x7FFF,true);}
+  return new Blob([buf],{type:"audio/wav"});
+}
+function chunkUrl(text){
+  if(_audioCache.has(text))return _audioCache.get(text);
+  const p=loadKokoro().then(function(tts){return tts.generate(text,{voice:KOKORO_VOICE});}).then(function(audio){
+    return URL.createObjectURL(wavBlobFromRaw(audio));
+  });
+  _audioCache.set(text,p);
+  p.catch(function(){if(_audioCache.get(text)===p)_audioCache.delete(text);});
+  return p;
+}
+async function playWithKokoro(text,btn,seq){
+  const chunks=splitForSpeech(text);const player=_playerEl();
+  for(let i=0;i<chunks.length;i++){
+    if(seq!==_playSeq)return;
+    const url=await chunkUrl(chunks[i]);
+    if(seq!==_playSeq)return;
+    if(i===0&&btn&&speakingBtn===btn)btn.textContent="⏸ Pause";
+    await new Promise(function(resolve){
+      let done=false;
+      const iv=setInterval(function(){if(seq!==_playSeq)finish();},120);
+      function finish(){if(done)return;done=true;clearInterval(iv);resolve();}
+      player.onended=finish;player.onerror=finish;
+      player.src=url;
+      const pr=player.play();if(pr&&typeof pr.catch==="function")pr.catch(finish);
+    });
+  }
+  if(seq===_playSeq){_isSpeaking=false;if(btn)btn.textContent="🔊 Listen";if(speakingBtn===btn)speakingBtn=null;}
+}
+function pickDeviceVoice(){
+  if(!("speechSynthesis" in window))return null;
+  let vs=[];try{vs=speechSynthesis.getVoices()||[];}catch(e){}
+  const en=vs.filter(function(v){return /^en([-_]|$)/i.test(v.lang||"");});
+  const pool=en.length?en:vs;
+  const prefs=["Natural","Google US English","Microsoft Aria","Microsoft Jenny","Microsoft Zira","Samantha","Microsoft","Google"];
+  for(let i=0;i<prefs.length;i++){const hit=pool.find(function(v){return v.name&&v.name.indexOf(prefs[i])!==-1;});if(hit)return hit;}
+  return pool[0]||null;
+}
+function speakWithDevice(text,btn,seq){
+  if(!("speechSynthesis" in window)){_isSpeaking=false;if(speakingBtn===btn)speakingBtn=null;if(btn)btn.textContent="🔊 Listen";return;}
+  try{speechSynthesis.cancel();}catch(e){}
+  const u=new SpeechSynthesisUtterance(text);
+  u.rate=0.98;
+  const v=pickDeviceVoice();if(v)u.voice=v;
+  if(btn)btn.textContent="⏸ Pause";
+  const done=function(){if(seq===_playSeq){_isSpeaking=false;if(btn)btn.textContent="🔊 Listen";if(speakingBtn===btn)speakingBtn=null;}};
+  u.onend=done;u.onerror=done;
   speechSynthesis.speak(u);
+}
+function speakText(text,btn){
+  const clean=(text||"").replace(/\s+/g," ").trim();
+  if(!clean)return;
+  if(speakingBtn===btn&&_isSpeaking){stopSpeaking();return;}
+  stopSpeaking();
+  speakingBtn=btn;_isSpeaking=true;
+  const seq=_playSeq;
+  if(_kokoroFailed){speakWithDevice(clean,btn,seq);return;}
+  if(btn)btn.textContent="⏳ Loading voice…";
+  playWithKokoro(clean,btn,seq).catch(function(){
+    if(seq===_playSeq)speakWithDevice(clean,btn,seq);
+  });
 }
 function listenBtn(text,label){
   const b=document.createElement("button");b.type="button";b.className="listen-btn";b.textContent="🔊 Listen";
@@ -376,16 +491,20 @@ function evaluateAlertedMove(ex,state,move){
 
 /* ============ Views ============ */
 function render(){
-  if(window.speechSynthesis)speechSynthesis.cancel();
-  document.getElementById("navHome").classList.toggle("active",view.name!=="stats");
-  document.getElementById("navStats").classList.toggle("active",view.name==="stats");
+  stopSpeaking();
+  const onStats=view.name==="stats";
+  const homeBtn=document.getElementById("navHome"),statsBtn=document.getElementById("navStats");
+  homeBtn.classList.toggle("active",!onStats);statsBtn.classList.toggle("active",onStats);
+  homeBtn.setAttribute("aria-selected",onStats?"false":"true");statsBtn.setAttribute("aria-selected",onStats?"true":"false");
   updateNav();app.innerHTML="";
   if(view.name==="stats")renderStats();
   else if(view.name==="stage")renderStage(view.stage);
   else renderHome();
+  app.classList.remove("page-enter");void app.offsetWidth;app.classList.add("page-enter");
   window.scrollTo({top:0});
 }
 function renderHome(){
+  app.appendChild(el("p","page-kicker","Stages"));
   const h=el("h1",null,"Learn chess the way games are actually played.");h.style.cssText="font-size:1.9rem;font-weight:600;line-height:1.25";app.appendChild(h);
   const intro=el("p","dim","Every chess game has three acts — the opening, the middlegame, and the endgame — and each needs its own skills. Train each stage in four phases: learn the strategy, play it guided step by step, play again with a coach flagging your mistakes, then play freely.");intro.style.cssText="margin-top:.6rem;max-width:36rem;line-height:1.65";app.appendChild(intro);
   app.appendChild(listenBtn("Learn chess the way games are actually played. Every chess game has three acts — the opening, the middlegame, and the endgame — and each needs its own skills. Train each stage in four phases: learn the strategy, play it guided step by step, play again with a coach flagging your mistakes, then play freely.","the introduction"));
@@ -422,6 +541,7 @@ function openStage(stage,phase){if(phase)phaseChoice[stage]=phase;view={name:"st
 function activePhaseFor(stage){if(phaseChoice[stage])return phaseChoice[stage];return PHASE_ORDER.find(p=>!progress.completed.has(phaseKey(stage,p)))||"tutorial";}
 function renderStage(stage){
   const meta=STAGES.find(s=>s.id===stage);const phase=activePhaseFor(stage);
+  app.appendChild(el("p","page-kicker","Stages · "+PHASE_META[phase].name));
   const h=el("h2",null,meta.name);h.style.fontSize="1.9rem";app.appendChild(h);
   const ip=el("p","dim",meta.intro);ip.style.cssText="margin-top:.3rem;line-height:1.6";app.appendChild(ip);
   app.appendChild(listenBtn(meta.intro,"the introduction to "+meta.name));
@@ -439,9 +559,113 @@ function renderStage(stage){
   const phaseIdx=PHASE_ORDER.indexOf(phase);const nextPhase=PHASE_ORDER[phaseIdx+1];
   if(progress.completed.has(phaseKey(stage,phase))&&nextPhase){const b=document.createElement("button");b.type="button";b.className="btn-accent";b.style.cssText="margin-top:1.75rem;width:100%";b.textContent="Continue to phase "+(phaseIdx+2)+": "+PHASE_META[nextPhase].name+" →";b.addEventListener("click",function(){phaseChoice[stage]=nextPhase;render();});app.appendChild(b);}
 }
+/* ============ Tutorial board animation: glide pieces between lesson positions ============
+   Lesson sections carry positions (FENs), not move lists, so the animation is the diff between
+   consecutive positions in the lesson: matched pieces glide, captured pieces fade, new pieces
+   fade in. The board underneath always renders the section's true position first — the moving
+   pieces are decorative clones on top — so interrupting or re-triggering an animation can never
+   leave the board in a wrong state. A single-move diff also gets the green arrow highlight. */
+function diffBoards(prev,next){
+  const moves=[],captured=[],appeared=[];
+  const prevLeft=new Map(),nextLeft=new Map();
+  for(let sq=0;sq<64;sq++){
+    const p=prev.board[sq],n=next.board[sq];
+    if(p&&n&&p===n)continue;
+    if(p)prevLeft.set(sq,p);
+    if(n)nextLeft.set(sq,n);
+  }
+  const pairs=[];
+  prevLeft.forEach(function(p,from){nextLeft.forEach(function(n,to){
+    if(p===n){const dx=(from%8)-(to%8),dy=Math.floor(from/8)-Math.floor(to/8);pairs.push({piece:p,from:from,to:to,d:dx*dx+dy*dy});}
+  });});
+  pairs.sort(function(a,b){return a.d-b.d;});
+  const usedFrom=new Set(),usedTo=new Set();
+  pairs.forEach(function(pr){
+    if(usedFrom.has(pr.from)||usedTo.has(pr.to))return;
+    usedFrom.add(pr.from);usedTo.add(pr.to);
+    moves.push({piece:pr.piece,from:pr.from,to:pr.to});
+  });
+  prevLeft.forEach(function(p,sq){if(!usedFrom.has(sq))captured.push({piece:p,sq:sq});});
+  nextLeft.forEach(function(n,sq){if(!usedTo.has(sq))appeared.push({piece:n,sq:sq});});
+  return{moves:moves,captured:captured,appeared:appeared};
+}
+function buildAnimatedBoard(fromState,toState){
+  const diff=fromState?diffBoards(fromState,toState):null;
+  const single=diff&&diff.moves.length===1&&diff.appeared.length===0?diff.moves[0]:null;
+  const opts={orientation:"w",small:true};
+  if(single){opts.arrows=[{from:single.from,to:single.to}];opts.highlightSquares=[single.from];}
+  const wrap=buildBoard(toState,opts);
+  return{wrap:wrap,toState:toState,diff:diff,reveal:!fromState,running:[]};
+}
+function pieceSpanAt(wrap,sq){const grid=wrap.querySelector(".board-grid");const cell=grid?grid.children[sq]:null;return cell?cell.querySelector(".piece"):null;}
+function resetBoardAnimation(ba){
+  ba.running.forEach(function(r){try{if(r.anim)r.anim.cancel();}catch(e){}if(r.clone&&r.clone.parentNode)r.clone.parentNode.removeChild(r.clone);if(r.restore)r.restore();});
+  ba.running=[];
+}
+function playBoardAnimation(ba){
+  if(!ba||!ba.wrap||!ba.wrap.isConnected)return;
+  resetBoardAnimation(ba);
+  const frame=ba.wrap.querySelector(".board-frame");if(!frame)return;
+  const reduce=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if(reduce||typeof HTMLElement==="undefined"||!HTMLElement.prototype.animate)return;
+  const W=frame.clientWidth;if(!W)return;
+  const sqSize=W/8,DUR=620;
+  function finishLater(rec,cleanup,ms){
+    let done=false;
+    const run=function(){if(done)return;done=true;cleanup();try{if(rec.anim)rec.anim.cancel();}catch(e){}const i=ba.running.indexOf(rec);if(i>=0)ba.running.splice(i,1);};
+    if(rec.anim)rec.anim.onfinish=run;
+    setTimeout(run,ms);
+  }
+  function makeClone(piece,sq){
+    const c=el("div","anim-piece");
+    c.style.left=(sq%8)*sqSize+"px";c.style.top=Math.floor(sq/8)*sqSize+"px";
+    c.style.width=sqSize+"px";c.style.height=sqSize+"px";
+    c.appendChild(el("span","piece "+colorOf(piece),GLYPHS[piece]));
+    frame.appendChild(c);return c;
+  }
+  if(ba.reveal){
+    let idx=0;
+    for(let sq=0;sq<64;sq++){
+      const p=ba.toState.board[sq];if(!p)continue;
+      const span=pieceSpanAt(ba.wrap,sq);if(!span)continue;
+      const delay=Math.min(idx*35,560);idx++;
+      span.style.opacity="0";
+      const anim=span.animate([{opacity:"0",transform:"translateY(10px) scale(.85)"},{opacity:"1",transform:"translateY(0) scale(1)"}],{duration:420,delay:delay,easing:"cubic-bezier(.2,.7,.3,1)",fill:"forwards"});
+      const rec={anim:anim,clone:null,restore:(function(sp){return function(){sp.style.opacity="";};})(span)};
+      ba.running.push(rec);
+      finishLater(rec,rec.restore,420+delay+250);
+    }
+    return;
+  }
+  const diff=ba.diff;if(!diff)return;
+  diff.moves.forEach(function(mv){
+    const real=pieceSpanAt(ba.wrap,mv.to);if(real)real.style.visibility="hidden";
+    const clone=makeClone(mv.piece,mv.from);
+    const dx=((mv.to%8)-(mv.from%8))*sqSize,dy=(Math.floor(mv.to/8)-Math.floor(mv.from/8))*sqSize;
+    const anim=clone.animate([{transform:"translate(0px, 0px)"},{transform:"translate("+dx+"px, "+dy+"px)"}],{duration:DUR,easing:"cubic-bezier(.25,.7,.25,1)",fill:"forwards"});
+    const restore=function(){if(real)real.style.visibility="";};
+    const rec={anim:anim,clone:clone,restore:restore};ba.running.push(rec);
+    finishLater(rec,function(){if(clone.parentNode)clone.parentNode.removeChild(clone);restore();},DUR+250);
+  });
+  diff.captured.forEach(function(cp){
+    const clone=makeClone(cp.piece,cp.sq);
+    const anim=clone.animate([{opacity:"1",transform:"scale(1)"},{opacity:"0",transform:"scale(.55)"}],{duration:380,easing:"ease-out",fill:"forwards"});
+    const rec={anim:anim,clone:clone,restore:null};ba.running.push(rec);
+    finishLater(rec,function(){if(clone.parentNode)clone.parentNode.removeChild(clone);},630);
+  });
+  diff.appeared.forEach(function(ap){
+    const span=pieceSpanAt(ba.wrap,ap.sq);if(!span)return;
+    span.style.opacity="0";
+    const anim=span.animate([{opacity:"0",transform:"scale(.7)"},{opacity:"1",transform:"scale(1)"}],{duration:380,delay:180,easing:"ease-out",fill:"forwards"});
+    const restore=function(){span.style.opacity="";};
+    const rec={anim:anim,clone:null,restore:restore};ba.running.push(rec);
+    finishLater(rec,restore,810);
+  });
+}
 /* Tutorial */
 function renderTutorial(container,stage){
   const lesson=LESSONS[stage];const done=progress.completed.has(phaseKey(stage,"tutorial"));
+  let prevTutState=(stage==="opening")?parseFEN(START_FEN):null;
   const h=el("h3",null,lesson.title);h.style.fontSize="1.5rem";container.appendChild(h);
   const ip=el("p","dim",lesson.intro);ip.style.cssText="margin-top:.5rem;line-height:1.65";container.appendChild(ip);
   container.appendChild(listenBtn(lesson.title+". "+lesson.intro,"the introduction to "+lesson.title));
@@ -449,8 +673,19 @@ function renderTutorial(container,stage){
     const s=el("section");s.style.marginTop="1.75rem";
     const sh=el("h4",null,sec.heading);sh.style.fontSize="1.15rem";s.appendChild(sh);
     const bp=el("p",null,sec.body);bp.style.cssText="margin-top:.4rem;line-height:1.65";s.appendChild(bp);
-    s.appendChild(listenBtn(sec.heading+". "+sec.body,"the section "+sec.heading));
-    if(sec.fen){const bw=el("div");bw.style.marginTop=".75rem";bw.appendChild(buildBoard(parseFEN(sec.fen),{orientation:"w",small:true}));s.appendChild(bw);}
+    const lb=listenBtn(sec.heading+". "+sec.body,"the section "+sec.heading);s.appendChild(lb);
+    if(sec.fen){
+      const toState=parseFEN(sec.fen);
+      const ba=buildAnimatedBoard(prevTutState,toState);prevTutState=toState;
+      const bw=el("div");bw.style.marginTop=".75rem";bw.appendChild(ba.wrap);s.appendChild(bw);
+      const wb=document.createElement("button");wb.type="button";wb.className="btn-outline watch-btn";wb.style.cssText="margin-top:.6rem;font-size:.88rem;padding:.45rem .8rem";wb.textContent="▶ Watch the pieces move";
+      wb.addEventListener("click",function(){playBoardAnimation(ba);});bw.appendChild(wb);
+      lb.addEventListener("click",function(){playBoardAnimation(ba);});
+      if("IntersectionObserver" in window){
+        const io=new IntersectionObserver(function(entries){entries.forEach(function(en){if(en.isIntersecting){playBoardAnimation(ba);io.disconnect();}});},{threshold:.35});
+        io.observe(ba.wrap);
+      }
+    }
     if(sec.tip){const tp=el("p","tip");tp.innerHTML="<strong>Club tip:</strong> "+sec.tip;s.appendChild(tp);}
     container.appendChild(s);
   });
@@ -616,7 +851,9 @@ function renderFreePlay(container,stage){
 }
 /* Stats */
 function renderStats(){
+  app.appendChild(el("p","page-kicker","My stats"));
   const h=el("h2",null,"Your training stats");h.style.fontSize="1.9rem";app.appendChild(h);
+  const sub=el("p","dim","Progress, accuracy, and the mistakes to drill next — all saved on this device.");sub.style.cssText="margin-top:.3rem;line-height:1.6";app.appendChild(sub);
   app.appendChild(listenBtn("Your training stats. Complete phases across the opening, middlegame, and endgame, and your flagged mistakes will show up here as focus areas.","an overview of your training stats"));
   const attempts=progress.attempts;const total=attempts.length;const correct=attempts.filter(a=>a.correct).length;const accuracy=total>0?Math.round(correct/total*100):null;
   const grid=el("div","stat-grid");
