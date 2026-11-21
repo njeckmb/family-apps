@@ -1,0 +1,703 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<meta name="theme-color" content="#0f766e" />
+<link rel="manifest" href="manifest.webmanifest"><link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Daily Routines">
+<title>Daily Routines — Shareable</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f6f5f1;
+    --surface:#ffffff;
+    --surface-2:#efece4;
+    --ink:#1c2420;
+    --muted:#6b756e;
+    --line:#e2ded2;
+    --teal:#0f766e;
+    --teal-ink:#0b5e57;
+    --teal-soft:#e0f2ef;
+    --amber:#b45309;
+    --amber-bg:#fef3c7;
+    --amber-line:#f5d67a;
+    --amber-ink:#92400e;
+    --danger:#b42318;
+    --shadow:0 1px 2px rgba(28,36,32,.05),0 8px 24px rgba(28,36,32,.05);
+    --radius:14px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#101512;
+      --surface:#1a201c;
+      --surface-2:#232a25;
+      --ink:#eef2ee;
+      --muted:#9aa79e;
+      --line:#2e3831;
+      --teal:#2dd4bf;
+      --teal-ink:#5eead4;
+      --teal-soft:#12312c;
+      --amber:#fbbf24;
+      --amber-bg:#2b2110;
+      --amber-line:#6b5316;
+      --amber-ink:#fcd34d;
+      --danger:#f97066;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25);
+    }
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"DM Sans",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.45}
+  button,[role="button"],select,summary,input:not([type="checkbox"],[type="radio"]){min-height:2.25rem}
+  button{font:inherit;cursor:pointer}
+  a{color:var(--teal-ink)}
+  .wrap{max-width:880px;margin:0 auto;padding:20px 16px 56px}
+  @media(min-width:720px){.wrap{padding:32px 24px 64px}}
+
+  /* Header */
+  .date-line{font-size:.82rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--teal-ink)}
+  h1{font-family:"DM Serif Display",Georgia,serif;font-weight:400;font-size:2.35rem;line-height:1.05;margin:.35rem 0 .4rem}
+  @media(min-width:720px){h1{font-size:3rem}}
+  .sub{color:var(--muted);margin:0;max-width:56ch}
+  .head-row{display:flex;gap:20px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap}
+  .ring-card{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:12px 16px;box-shadow:var(--shadow);flex-shrink:0}
+  .ring{width:64px;height:64px;flex-shrink:0}
+  .ring circle{fill:none;stroke-width:7}
+  .ring .track{stroke:var(--surface-2)}
+  .ring .fill{stroke:var(--teal);stroke-linecap:round;transform:rotate(-90deg);transform-origin:center;transition:stroke-dashoffset .4s ease}
+  .ring text{font-family:"DM Sans",sans-serif;font-size:15px;font-weight:700;fill:var(--ink);text-anchor:middle;dominant-baseline:central}
+  .ring-meta strong{display:block;font-size:1rem}
+  .ring-meta span{color:var(--muted);font-size:.85rem}
+  .week{display:flex;gap:6px;margin-top:18px;flex-wrap:wrap}
+  .day-dot{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:.68rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);min-width:38px}
+  .day-dot i{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-style:normal;font-size:.72rem;color:var(--muted);background:var(--surface)}
+  .day-dot.full i{border-color:var(--teal);background:var(--teal);color:#fff}
+  .day-dot.part i{border-color:var(--teal);color:var(--teal-ink)}
+  .day-dot.today span{color:var(--ink)}
+
+  /* Must-dos banner */
+  .must-banner{margin-top:20px;background:var(--amber-bg);border:1px solid var(--amber-line);border-radius:var(--radius);padding:14px 16px}
+  .must-banner h2{margin:0 0 2px;font-size:.82rem;letter-spacing:.08em;text-transform:uppercase;color:var(--amber-ink);display:flex;align-items:center;gap:8px}
+  .must-banner p{margin:0;color:var(--amber-ink);font-size:.92rem}
+  .must-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .must-chip{display:inline-flex;align-items:center;gap:7px;background:var(--surface);border:1px solid var(--amber-line);color:var(--ink);border-radius:999px;padding:6px 8px 6px 12px;font-size:.88rem;font-weight:500;min-height:36px}
+  .must-chip button{border:none;background:var(--teal-soft);color:var(--teal-ink);width:26px;height:26px;min-height:26px;border-radius:50%;font-weight:700;line-height:1;padding:0}
+  .must-banner.done{background:var(--teal-soft);border-color:var(--teal)}
+  .must-banner.done h2,.must-banner.done p{color:var(--teal-ink)}
+
+  /* Sections */
+  .periods{display:grid;gap:16px;margin-top:20px}
+  @media(min-width:860px){.periods{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr);align-items:start}}
+  .period{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;min-width:0}
+  .period-head{padding:14px 14px 10px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+  .period-head h2{font-family:"DM Serif Display",Georgia,serif;font-weight:400;font-size:1.35rem;margin:0}
+  .period-head .count{font-size:.82rem;color:var(--muted);font-weight:600;white-space:nowrap}
+  .period-head .count b{color:var(--teal-ink)}
+  .carry-note{padding:8px 14px 0;font-size:.78rem;color:var(--muted)}
+  .items{list-style:none;margin:0;padding:8px}
+  .item{display:flex;align-items:center;gap:10px;padding:7px 8px;border-radius:10px;min-height:44px}
+  .item + .item{margin-top:2px}
+  .item:hover{background:var(--surface-2)}
+  .item.is-must{background:var(--amber-bg);box-shadow:inset 0 0 0 1px var(--amber-line)}
+  .item.is-must:hover{background:var(--amber-bg)}
+  .check{flex-shrink:0;width:28px;height:28px;min-height:28px;border-radius:50%;border:2px solid var(--line);background:transparent;color:transparent;display:grid;place-items:center;font-size:.85rem;padding:0;transition:all .15s}
+  .item.done .check{background:var(--teal);border-color:var(--teal);color:#fff}
+  .item .label{flex:1;min-width:0;font-size:.95rem;overflow-wrap:anywhere}
+  .item.done .label{color:var(--muted);text-decoration:line-through}
+  .item{align-items:flex-start}
+  .item .check{margin-top:2px}
+  .item-main{flex:1;min-width:0}
+  .item-main .label{font-size:.95rem;overflow-wrap:anywhere;display:block}
+  .item.done .item-main .label{color:var(--muted);text-decoration:line-through}
+  .item-note{font-size:.84rem;color:var(--muted);line-height:1.45;margin-top:3px;overflow-wrap:anywhere}
+  .item.done .item-note{color:var(--muted)}
+  .item-links{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .item-links a{font-size:.8rem;font-weight:600;text-decoration:none;background:var(--teal-soft);color:var(--teal-ink);padding:4px 9px;border-radius:999px;line-height:1.3}
+  .item-links a:hover{text-decoration:underline}
+  .star{flex-shrink:0;width:32px;height:32px;min-height:32px;border-radius:50%;border:1.5px solid var(--line);background:transparent;color:var(--muted);font-size:1rem;line-height:1;padding:0;display:grid;place-items:center}
+  .star[aria-pressed="true"]{background:var(--amber);border-color:var(--amber);color:#fff}
+  .del{flex-shrink:0;width:32px;height:32px;min-height:32px;border:none;background:transparent;color:var(--muted);border-radius:8px;font-size:1.05rem;line-height:1;padding:0}
+  .del:hover{color:var(--danger);background:var(--surface)}
+  .group{margin:8px 4px 4px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .group-head{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surface-2)}
+  .group-head .gname{flex:1;font-weight:700;font-size:.88rem;letter-spacing:.01em;min-width:0;overflow-wrap:anywhere}
+  .group-head .gcount{font-size:.75rem;color:var(--muted);font-weight:600}
+  .group .items{padding:6px}
+  .empty-note{padding:14px;font-size:.9rem;color:var(--muted)}
+  .add-row{border-top:1px solid var(--line);padding:10px;display:grid;gap:8px;min-width:0}
+  .add-line{display:flex;gap:8px;min-width:0;width:100%}
+  .add-line input{flex:1 1 auto;min-width:0;width:100%;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink);padding:8px 10px;font:inherit;font-size:.92rem}
+  .add-line .btn{flex-shrink:0}
+  .btn{border:1px solid var(--teal);background:var(--teal);color:#fff;border-radius:9px;padding:8px 14px;font-weight:600;font-size:.9rem}
+  .btn.ghost{background:transparent;color:var(--teal-ink)}
+  .btn.small{padding:6px 10px;font-size:.82rem;min-height:32px}
+  .add-sub{display:flex;gap:8px;flex-wrap:wrap}
+  .link-btn{border:none;background:none;color:var(--teal-ink);font-weight:600;font-size:.84rem;padding:4px 6px;min-height:32px;text-decoration:underline;text-underline-offset:3px}
+
+  /* Welcome / empty state */
+  .welcome{margin-top:20px;background:var(--surface);border:1px dashed var(--teal);border-radius:var(--radius);padding:20px}
+  .welcome h2{font-family:"DM Serif Display",Georgia,serif;font-weight:400;font-size:1.5rem;margin:0 0 6px}
+  .welcome p{color:var(--muted);margin:0 0 14px;max-width:60ch}
+  .welcome .row{display:flex;gap:10px;flex-wrap:wrap}
+
+  /* To-Dos */
+  .todos{margin-top:28px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+  .todos-head{padding:16px;border-bottom:1px solid var(--line)}
+  .todos-head h2{font-family:"DM Serif Display",Georgia,serif;font-weight:400;font-size:1.6rem;margin:0 0 4px}
+  .todos-head p{margin:0;color:var(--muted);font-size:.92rem}
+  .todo-add{display:flex;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .todo-add input{flex:1;min-width:200px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink);padding:8px 10px;font:inherit}
+  .todo-filters{display:flex;gap:6px;padding:10px 16px 0;flex-wrap:wrap}
+  .filter{border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:999px;padding:5px 12px;font-size:.84rem;font-weight:600;min-height:32px}
+  .filter[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+  .todo-list{list-style:none;margin:0;padding:10px 12px 14px}
+  .todo-empty{padding:16px;color:var(--muted);font-size:.92rem}
+
+  /* Footer tools */
+  .tools{margin-top:28px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .tools .spacer{flex:1}
+  .fineprint{margin-top:14px;color:var(--muted);font-size:.84rem;max-width:64ch}
+
+  /* Modal + toast */
+  .modal-back{position:fixed;inset:0;background:rgba(10,14,12,.55);display:none;place-items:center;padding:16px;z-index:50}
+  .modal-back.open{display:grid}
+  .modal{background:var(--surface);color:var(--ink);border-radius:16px;padding:22px;max-width:420px;width:100%;box-shadow:var(--shadow)}
+  .modal h3{margin:0 0 8px;font-size:1.15rem}
+  .modal p{margin:0 0 16px;color:var(--muted)}
+  .modal .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+  .btn.danger{background:var(--danger);border-color:var(--danger);color:#fff}
+  .btn.plain{background:transparent;border-color:var(--line);color:var(--ink)}
+  .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:.9rem;font-weight:600;opacity:0;pointer-events:none;transition:all .25s;z-index:60;max-width:calc(100vw - 32px);text-align:center}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  @media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="head-row">
+      <div>
+        <div class="date-line" id="dateLine">Today</div>
+        <h1>Daily Routines</h1>
+        <p class="sub">Your day in three blocks — Morning, Anytime, and Evening. Check things off as you go, and star the ones that matter most.</p>
+      </div>
+      <div class="ring-card" aria-label="Today's progress">
+        <svg class="ring" viewBox="0 0 64 64" aria-hidden="true">
+          <circle class="track" cx="32" cy="32" r="26"></circle>
+          <circle class="fill" id="ringFill" cx="32" cy="32" r="26" stroke-dasharray="163.4" stroke-dashoffset="163.4"></circle>
+          <text x="32" y="33" id="ringText">0%</text>
+        </svg>
+        <div class="ring-meta">
+          <strong id="ringCount">0 of 0 done</strong>
+          <span id="ringLabel">Nothing set up yet</span>
+        </div>
+      </div>
+    </div>
+    <div class="week" id="weekStrip" aria-label="Last seven days"></div>
+  </header>
+
+  <section class="must-banner" id="mustBanner" hidden>
+    <h2>★ Today's must-dos</h2>
+    <p id="mustText"></p>
+    <div class="must-list" id="mustList"></div>
+  </section>
+
+  <section class="welcome" id="welcomeCard" hidden>
+    <h2>Start fresh — this copy is yours</h2>
+    <p>Add your own habits to each block below, star the non-negotiables, and check them off through the day. Everything is saved only on this device, and the checklist resets each morning. Or restore the starter routines — morning basics, the Workout group, and evening Cleaning — and edit them to fit.</p>
+    <div class="row">
+      <button class="btn" id="sampleBtn" type="button">Restore starter routines</button>
+      <button class="btn ghost" id="dismissWelcome" type="button">I'll add my own</button>
+    </div>
+  </section>
+
+  <main class="periods" id="periods"></main>
+
+  <section class="todos" aria-labelledby="todosTitle">
+    <div class="todos-head">
+      <h2 id="todosTitle">To-Dos board</h2>
+      <p>One-off tasks that aren't part of the daily rhythm. Star one to pin it as a must-do for today.</p>
+    </div>
+    <form class="todo-add" id="todoForm">
+      <input id="todoInput" type="text" placeholder="Add a to-do — e.g. Book dentist appointment" autocomplete="off" aria-label="New to-do" />
+      <button class="btn" type="submit">Add to-do</button>
+    </form>
+    <div class="todo-filters" role="group" aria-label="Filter to-dos">
+      <button class="filter" type="button" data-filter="all" aria-pressed="true">All</button>
+      <button class="filter" type="button" data-filter="open" aria-pressed="false">Open</button>
+      <button class="filter" type="button" data-filter="done" aria-pressed="false">Done</button>
+    </div>
+    <ul class="todo-list" id="todoList"></ul>
+    <p class="todo-empty" id="todoEmpty">No to-dos yet. Add your first one above.</p>
+  </section>
+
+  <div class="tools">
+    <button class="btn ghost small" id="resetDayBtn" type="button">Reset today</button>
+    <button class="btn ghost small" id="exportBtn" type="button">Export my data</button>
+    <label class="btn ghost small" for="importFile" style="display:inline-flex;align-items:center;cursor:pointer">Import data</label>
+    <input id="importFile" type="file" accept="application/json" hidden />
+    <span class="spacer"></span>
+    <button class="btn plain small" id="clearBtn" type="button">Clear everything</button>
+  </div>
+  <p class="fineprint">Your routines, to-dos, and check-offs live only in this browser on this device — nothing is sent anywhere and there's no account. Use Export to keep a backup file you can import later or on another device. Tip: use your browser's “Add to Home Screen” to open this like an app.</p>
+</div>
+
+<div class="modal-back" id="modalBack" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal">
+    <h3 id="modalTitle">Clear everything?</h3>
+    <p id="modalText">This deletes all your routines, groups, to-dos, and history from this device. This can't be undone.</p>
+    <div class="row">
+      <button class="btn plain" id="modalCancel" type="button">Keep my data</button>
+      <button class="btn danger" id="modalConfirm" type="button">Yes, clear it</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  "use strict";
+  var KEY = "daily-routines-shareable-v1";
+  var PERIODS = [
+    { id:"morning", name:"Morning", hint:"Start-of-day block" },
+    { id:"anytime", name:"Anytime", hint:"Fits anywhere in the day" },
+    { id:"evening", name:"Evening", hint:"End-of-day block" }
+  ];
+
+  function todayStr(d){
+    d = d || new Date();
+    var m = String(d.getMonth()+1).padStart(2,"0");
+    var day = String(d.getDate()).padStart(2,"0");
+    return d.getFullYear()+"-"+m+"-"+day;
+  }
+  function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
+
+  function seedState(){
+    return {
+      items:[
+        { id:"seed-vitamins", period:"morning", groupId:null, text:"Take my vitamins", mustDo:true, note:"Take with a full glass of water, ideally with breakfast." },
+        { id:"seed-drink-water", period:"morning", groupId:null, text:"Drink water", mustDo:false },
+        { id:"seed-cold-shower", period:"morning", groupId:null, text:"Morning Cold Shower", mustDo:false },
+        { id:"seed-flossing", period:"morning", groupId:null, text:"Flossing", mustDo:false },
+        { id:"seed-chess-am", period:"morning", groupId:null, text:"Chess", mustDo:false },
+        { id:"seed-stretching", period:"anytime", groupId:"seed-workout", text:"Stretching", mustDo:true, note:"5 min · Mobility: hip-flexor lunges, deep squat hold, kneeling hip opener, pancake fold, ankle stretch, toe lifts 3 sets of 20, runner's-lunge hip opener, straddle side bends. Plus arm swings 30s, alternating overhead reaches 30s, standing side bends 15s each side, torso twists 30s, cross-body arm swings 30s, lateral lunges with overhead reach 30s, deep squat hold 30s, cossack squats 30s.", links:[{ label:"▶ Routine", url:"https://www.instagram.com/p/DeueO-FDIhH/" }] },
+        { id:"seed-leg-workout", period:"anytime", groupId:"seed-workout", text:"Leg workout", mustDo:true, note:"2 min · Bodyweight squats 30s, reverse lunges 30s, glute bridges 30s, wall sit 30s.", links:[{ label:"▶ Video", url:"https://www.youtube.com/watch?v=JCwcBjG2q5c" }] },
+        { id:"seed-ankle-workout", period:"anytime", groupId:"seed-workout", text:"Ankle workout", mustDo:true, note:"2 min · Ankle circles 15s each direction each foot, tibialis raises 10 reps, calf raises 10 reps, heel walks 30s.", links:[{ label:"▶ Video 1", url:"https://www.youtube.com/watch?v=L7FG93ezHw4" },{ label:"▶ Video 2", url:"https://www.youtube.com/watch?v=6cqQXAaZ8CU" }] },
+        { id:"seed-pushups", period:"anytime", groupId:"seed-workout", text:"Push-ups", mustDo:true, note:"2 min · Hands slightly wider than shoulders, body in a straight line, lower until chest nearly touches floor, elbows ~45°, push the floor away. Easier option: knees variation.", links:[{ label:"▶ Video", url:"https://www.youtube.com/watch?v=FfqrA-QIgxs" }] },
+        { id:"seed-abs", period:"anytime", groupId:"seed-workout", text:"Abs", mustDo:true, note:"2 min · Crunches 30s, reverse crunches 30s, bicycle crunches 30s, plank 30s.", links:[{ label:"▶ Video", url:"https://www.youtube.com/watch?v=u6NkA4aT0Eg" }] },
+        { id:"seed-clean-living", period:"evening", groupId:"seed-cleaning", text:"Living room", mustDo:false, note:"5-minute speed clean · Pick up clutter, wipe surfaces, quick vacuum, take trash out." },
+        { id:"seed-clean-bedroom", period:"evening", groupId:"seed-cleaning", text:"Bedroom", mustDo:false, note:"5-minute speed clean · Make the bed, pick up clothes and clutter, wipe surfaces, quick vacuum or sweep, trash out." },
+        { id:"seed-clean-bathroom", period:"evening", groupId:"seed-cleaning", text:"Bathroom", mustDo:false, note:"5-minute speed clean · Clear counters, wipe sink and surfaces, quick scrub, sweep the floor, trash out." },
+        { id:"seed-clean-kitchen", period:"evening", groupId:"seed-cleaning", text:"Kitchen", mustDo:false, note:"5-minute speed clean · Clear counters, wipe surfaces, put dishes away, quick sweep, trash out." },
+        { id:"seed-chess-pm", period:"evening", groupId:null, text:"Chess", mustDo:false }
+      ],
+      groups:[
+        { id:"seed-workout", period:"anytime", name:"Workout" },
+        { id:"seed-cleaning", period:"evening", name:"Cleaning" }
+      ],
+      todos:[],
+      completions:{},
+      welcomed:true
+    };
+  }
+  function load(){
+    try{
+      var raw = localStorage.getItem(KEY);
+      if(raw){ var s = JSON.parse(raw); if(s && Array.isArray(s.items)) return s; }
+    }catch(e){}
+    return seedState();
+  }
+  var state = load();
+  if(!state.groups) state.groups = [];
+  if(!state.todos) state.todos = [];
+  if(!state.completions) state.completions = {};
+  var todoFilter = "all";
+
+  function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
+  function todays(){ var t = todayStr(); if(!state.completions[t]) state.completions[t] = {}; return state.completions[t]; }
+
+  var toastTimer = null;
+  function toast(msg){
+    var el = document.getElementById("toast");
+    el.textContent = msg; el.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ el.classList.remove("show"); }, 2400);
+  }
+
+  function esc(s){
+    return String(s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; });
+  }
+
+  /* ---------- rendering ---------- */
+  function sortedItems(list){
+    return list.slice().sort(function(a,b){
+      if(a.mustDo !== b.mustDo) return a.mustDo ? -1 : 1;
+      return 0;
+    });
+  }
+
+  function itemRow(item){
+    var done = !!todays()[item.id];
+    var li = document.createElement("li");
+    li.className = "item" + (item.mustDo ? " is-must" : "") + (done ? " done" : "");
+    var noteHtml = item.note ? '<div class="item-note">' + esc(item.note) + '</div>' : '';
+    var linksHtml = '';
+    if(item.links && item.links.length){
+      linksHtml = '<div class="item-links">' + item.links.map(function(l){
+        return '<a href="' + esc(l.url) + '" target="_blank" rel="noopener noreferrer">' + esc(l.label) + '</a>';
+      }).join('') + '</div>';
+    }
+    li.innerHTML =
+      '<button class="check" type="button" aria-label="Mark ' + esc(item.text) + ' done" aria-pressed="' + done + '">✓</button>' +
+      '<div class="item-main"><span class="label">' + esc(item.text) + '</span>' + noteHtml + linksHtml + '</div>' +
+      '<button class="star" type="button" aria-label="Toggle must-do for ' + esc(item.text) + '" aria-pressed="' + !!item.mustDo + '" title="Must-do">★</button>' +
+      '<button class="del" type="button" aria-label="Delete ' + esc(item.text) + '">×</button>';
+    li.querySelector(".check").addEventListener("click", function(){ toggleDone(item.id); });
+    li.querySelector(".star").addEventListener("click", function(){ toggleMust(item.id); });
+    li.querySelector(".del").addEventListener("click", function(){ deleteItem(item.id); });
+    return li;
+  }
+
+  function renderPeriods(){
+    var host = document.getElementById("periods");
+    host.innerHTML = "";
+    PERIODS.forEach(function(p){
+      var card = document.createElement("section");
+      card.className = "period";
+      card.setAttribute("aria-label", p.name);
+
+      var periodItems = state.items.filter(function(i){ return i.period === p.id; });
+      var doneCount = periodItems.filter(function(i){ return todays()[i.id]; }).length;
+
+      var head = document.createElement("div");
+      head.className = "period-head";
+      head.innerHTML = "<h2>" + p.name + '</h2><span class="count">' +
+        (periodItems.length ? "<b>" + doneCount + "</b> / " + periodItems.length + " done" : "empty") + "</span>";
+      card.appendChild(head);
+
+      if(p.id !== "anytime" && state.items.some(function(i){ return i.period === "anytime" && !todays()[i.id]; })){
+        var note = document.createElement("div");
+        note.className = "carry-note";
+        note.textContent = "End of this block: anything still open in Anytime counts here too.";
+        card.appendChild(note);
+      }
+
+      var standalone = sortedItems(periodItems.filter(function(i){ return !i.groupId; }));
+      var ul = document.createElement("ul");
+      ul.className = "items";
+      standalone.forEach(function(i){ ul.appendChild(itemRow(i)); });
+      var hasGroups = state.groups.some(function(g){ return g.period === p.id; });
+      // Periods with groups (e.g. Evening: Cleaning group, then Chess) show groups first
+      if(standalone.length && !hasGroups) card.appendChild(ul);
+
+      state.groups.filter(function(g){ return g.period === p.id; }).forEach(function(g){
+        var gItems = sortedItems(periodItems.filter(function(i){ return i.groupId === g.id; }));
+        var gDone = gItems.filter(function(i){ return todays()[i.id]; }).length;
+        var allMust = gItems.length > 0 && gItems.every(function(i){ return i.mustDo; });
+        var box = document.createElement("div");
+        box.className = "group";
+        var gh = document.createElement("div");
+        gh.className = "group-head";
+        gh.innerHTML = '<span class="gname">' + esc(g.name) + '</span>' +
+          '<span class="gcount">' + (gItems.length ? gDone + "/" + gItems.length : "") + '</span>' +
+          '<button class="star" type="button" aria-pressed="' + allMust + '" aria-label="Star whole group ' + esc(g.name) + '" title="Star the whole group">★</button>' +
+          '<button class="del" type="button" aria-label="Delete group ' + esc(g.name) + '">×</button>';
+        gh.querySelector(".star").addEventListener("click", function(){ toggleGroupMust(g.id); });
+        gh.querySelector(".del").addEventListener("click", function(){ deleteGroup(g.id); });
+        box.appendChild(gh);
+        var gul = document.createElement("ul");
+        gul.className = "items";
+        if(gItems.length){ gItems.forEach(function(i){ gul.appendChild(itemRow(i)); }); }
+        else {
+          var e = document.createElement("li");
+          e.className = "empty-note"; e.style.padding = "8px";
+          e.textContent = "No items in this group yet — add one below.";
+          gul.appendChild(e);
+        }
+        box.appendChild(gul);
+
+        var gAdd = document.createElement("form");
+        gAdd.className = "add-line";
+        gAdd.style.padding = "0 8px 10px";
+        gAdd.innerHTML = '<input type="text" placeholder="Add to ' + esc(g.name) + '…" aria-label="Add item to ' + esc(g.name) + '" autocomplete="off"><button class="btn small" type="submit">Add</button>';
+        gAdd.addEventListener("submit", function(ev){
+          ev.preventDefault();
+          var v = gAdd.querySelector("input").value.trim();
+          if(!v) return;
+          state.items.push({ id: uid(), period: p.id, groupId: g.id, text: v, mustDo: false });
+          save(); render();
+        });
+        box.appendChild(gAdd);
+        card.appendChild(box);
+      });
+      if(standalone.length && hasGroups) card.appendChild(ul);
+
+      if(!periodItems.length && !state.groups.some(function(g){ return g.period === p.id; })){
+        var empty = document.createElement("div");
+        empty.className = "empty-note";
+        empty.textContent = "Nothing here yet — add your first " + p.name.toLowerCase() + " habit below.";
+        card.appendChild(empty);
+      }
+
+      var add = document.createElement("div");
+      add.className = "add-row";
+      var form = document.createElement("form");
+      form.className = "add-line";
+      form.innerHTML = '<input type="text" placeholder="Add a ' + p.name.toLowerCase() + ' routine…" aria-label="Add a ' + p.name + ' routine" autocomplete="off"><button class="btn" type="submit">Add</button>';
+      form.addEventListener("submit", function(ev){
+        ev.preventDefault();
+        var v = form.querySelector("input").value.trim();
+        if(!v) return;
+        state.items.push({ id: uid(), period: p.id, groupId: null, text: v, mustDo: false });
+        save(); render();
+        var inp = document.querySelector('[data-add-input="' + p.id + '"]');
+        if(inp) inp.focus();
+      });
+      form.querySelector("input").setAttribute("data-add-input", p.id);
+      add.appendChild(form);
+      var sub = document.createElement("div");
+      sub.className = "add-sub";
+      var gBtn = document.createElement("button");
+      gBtn.className = "link-btn"; gBtn.type = "button"; gBtn.textContent = "+ New group";
+      gBtn.addEventListener("click", function(){
+        if(add.querySelector(".group-form")) return;
+        var gf = document.createElement("form");
+        gf.className = "add-line group-form";
+        gf.innerHTML = '<input type="text" placeholder="Group name…" aria-label="Group name" autocomplete="off"><button class="btn small" type="submit">Create group</button>';
+        gf.addEventListener("submit", function(ev){
+          ev.preventDefault();
+          var v = gf.querySelector("input").value.trim();
+          if(!v) return;
+          state.groups.push({ id: uid(), period: p.id, name: v });
+          save(); render(); toast("Group added to " + p.name);
+        });
+        add.appendChild(gf);
+        gf.querySelector("input").focus();
+      });
+      sub.appendChild(gBtn);
+      add.appendChild(sub);
+      card.appendChild(add);
+
+      host.appendChild(card);
+    });
+  }
+
+  function renderHeader(){
+    var now = new Date();
+    var days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+    var months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+    document.getElementById("dateLine").textContent = days[now.getDay()] + " · " + months[now.getMonth()] + " " + now.getDate() + ", " + now.getFullYear();
+
+    var total = state.items.length;
+    var done = state.items.filter(function(i){ return todays()[i.id]; }).length;
+    var pct = total ? Math.round(done/total*100) : 0;
+    var C = 163.4;
+    document.getElementById("ringFill").style.strokeDashoffset = String(C - C*pct/100);
+    document.getElementById("ringText").textContent = pct + "%";
+    document.getElementById("ringCount").textContent = done + " of " + total + " done";
+    document.getElementById("ringLabel").textContent = total === 0 ? "Nothing set up yet" : (done === total ? "All done — nice work" : (total - done) + " still open today");
+
+    var strip = document.getElementById("weekStrip");
+    strip.innerHTML = "";
+    var dayNames = ["Su","Mo","Tu","We","Th","Fr","Sa"];
+    for(var k = 6; k >= 0; k--){
+      var d = new Date(now); d.setDate(now.getDate() - k);
+      var key = todayStr(d);
+      var comp = state.completions[key] || {};
+      var dTotal = state.items.length;
+      var dDone = state.items.filter(function(i){ return comp[i.id]; }).length;
+      var cell = document.createElement("div");
+      cell.className = "day-dot" + (k === 0 ? " today" : "");
+      if(dTotal && dDone === dTotal) cell.classList.add("full");
+      else if(dDone > 0) cell.classList.add("part");
+      cell.innerHTML = "<i>" + (dTotal && dDone === dTotal ? "✓" : d.getDate()) + "</i><span>" + (k === 0 ? "Today" : dayNames[d.getDay()]) + "</span>";
+      strip.appendChild(cell);
+    }
+  }
+
+  function renderMust(){
+    var banner = document.getElementById("mustBanner");
+    var musts = state.items.filter(function(i){ return i.mustDo; });
+    var todoMusts = state.todos.filter(function(t){ return t.mustDo && !t.done; });
+    if(!musts.length && !todoMusts.length){ banner.hidden = true; return; }
+    banner.hidden = false;
+    var open = musts.filter(function(i){ return !todays()[i.id]; });
+    var list = document.getElementById("mustList");
+    list.innerHTML = "";
+    banner.classList.toggle("done", open.length === 0 && todoMusts.length === 0);
+    document.getElementById("mustText").textContent =
+      (open.length === 0 && todoMusts.length === 0)
+        ? "Every must-do is checked off. The rest of the day is a bonus."
+        : (open.length + todoMusts.length) + " must-do" + ((open.length + todoMusts.length) === 1 ? "" : "s") + " still open — starred items sit at the top of their block.";
+    open.forEach(function(i){
+      var chip = document.createElement("span");
+      chip.className = "must-chip";
+      chip.innerHTML = esc(i.text) + ' <button type="button" aria-label="Check off ' + esc(i.text) + '">✓</button>';
+      chip.querySelector("button").addEventListener("click", function(){ toggleDone(i.id); });
+      list.appendChild(chip);
+    });
+    todoMusts.forEach(function(t){
+      var chip = document.createElement("span");
+      chip.className = "must-chip";
+      chip.innerHTML = esc(t.text) + ' <button type="button" aria-label="Complete to-do ' + esc(t.text) + '">✓</button>';
+      chip.querySelector("button").addEventListener("click", function(){ toggleTodo(t.id); });
+      list.appendChild(chip);
+    });
+  }
+
+  function renderTodos(){
+    var ul = document.getElementById("todoList");
+    ul.innerHTML = "";
+    var list = state.todos.filter(function(t){
+      if(todoFilter === "open") return !t.done;
+      if(todoFilter === "done") return t.done;
+      return true;
+    });
+    list = list.slice().sort(function(a,b){
+      if(a.done !== b.done) return a.done ? 1 : -1;
+      if(a.mustDo !== b.mustDo) return a.mustDo ? -1 : 1;
+      return 0;
+    });
+    document.getElementById("todoEmpty").style.display = state.todos.length ? "none" : "block";
+    if(state.todos.length && !list.length){
+      var e = document.createElement("li");
+      e.className = "todo-empty"; e.style.padding = "8px 4px";
+      e.textContent = todoFilter === "done" ? "Nothing completed yet." : "Nothing open — all caught up.";
+      ul.appendChild(e);
+    }
+    list.forEach(function(t){
+      var li = document.createElement("li");
+      li.className = "item" + (t.mustDo ? " is-must" : "") + (t.done ? " done" : "");
+      li.innerHTML =
+        '<button class="check" type="button" aria-label="Mark to-do done" aria-pressed="' + t.done + '">✓</button>' +
+        '<span class="label">' + esc(t.text) + '</span>' +
+        '<button class="star" type="button" aria-label="Toggle must-do" aria-pressed="' + !!t.mustDo + '" title="Must-do today">★</button>' +
+        '<button class="del" type="button" aria-label="Delete to-do">×</button>';
+      li.querySelector(".check").addEventListener("click", function(){ toggleTodo(t.id); });
+      li.querySelector(".star").addEventListener("click", function(){
+        var td = state.todos.find(function(x){ return x.id === t.id; });
+        if(td){ td.mustDo = !td.mustDo; save(); render(); }
+      });
+      li.querySelector(".del").addEventListener("click", function(){
+        state.todos = state.todos.filter(function(x){ return x.id !== t.id; });
+        save(); render(); toast("To-do deleted");
+      });
+      ul.appendChild(li);
+    });
+  }
+
+  function renderWelcome(){
+    var show = !state.welcomed && state.items.length === 0 && state.todos.length === 0;
+    document.getElementById("welcomeCard").hidden = !show;
+  }
+
+  function render(){ renderHeader(); renderMust(); renderPeriods(); renderTodos(); renderWelcome(); }
+
+  /* ---------- actions ---------- */
+  function toggleDone(id){
+    var c = todays();
+    c[id] = !c[id];
+    if(!c[id]) delete c[id];
+    save(); render();
+  }
+  function toggleMust(id){
+    var it = state.items.find(function(x){ return x.id === id; });
+    if(it){ it.mustDo = !it.mustDo; save(); render(); toast(it.mustDo ? "Starred as a must-do — it moves to the top" : "Must-do removed"); }
+  }
+  function toggleGroupMust(gid){
+    var items = state.items.filter(function(x){ return x.groupId === gid; });
+    if(!items.length){ toast("Add an item to this group first"); return; }
+    var target = !items.every(function(x){ return x.mustDo; });
+    items.forEach(function(x){ x.mustDo = target; });
+    save(); render(); toast(target ? "Whole group starred" : "Group unstarred");
+  }
+  function deleteItem(id){
+    state.items = state.items.filter(function(x){ return x.id !== id; });
+    Object.keys(state.completions).forEach(function(k){ delete state.completions[k][id]; });
+    save(); render(); toast("Routine removed");
+  }
+  function deleteGroup(gid){
+    state.groups = state.groups.filter(function(g){ return g.id !== gid; });
+    state.items.forEach(function(x){ if(x.groupId === gid) x.groupId = null; });
+    save(); render(); toast("Group removed — its items were kept");
+  }
+  function toggleTodo(id){
+    var t = state.todos.find(function(x){ return x.id === id; });
+    if(t){ t.done = !t.done; save(); render(); }
+  }
+
+  /* ---------- wiring ---------- */
+  document.getElementById("todoForm").addEventListener("submit", function(ev){
+    ev.preventDefault();
+    var inp = document.getElementById("todoInput");
+    var v = inp.value.trim();
+    if(!v) return;
+    state.todos.push({ id: uid(), text: v, done: false, mustDo: false });
+    inp.value = "";
+    save(); render(); toast("To-do added");
+  });
+  document.querySelectorAll(".filter").forEach(function(btn){
+    btn.addEventListener("click", function(){
+      todoFilter = btn.getAttribute("data-filter");
+      document.querySelectorAll(".filter").forEach(function(b){ b.setAttribute("aria-pressed", String(b === btn)); });
+      renderTodos();
+    });
+  });
+  document.getElementById("sampleBtn").addEventListener("click", function(){
+    var seed = seedState();
+    state.items = seed.items;
+    state.groups = seed.groups;
+    state.welcomed = true;
+    save(); render(); toast("Starter routines restored — make them yours");
+  });
+  document.getElementById("dismissWelcome").addEventListener("click", function(){
+    state.welcomed = true; save(); renderWelcome();
+  });
+  document.getElementById("resetDayBtn").addEventListener("click", function(){
+    state.completions[todayStr()] = {};
+    save(); render(); toast("Today's check-offs cleared");
+  });
+  document.getElementById("exportBtn").addEventListener("click", function(){
+    var blob = new Blob([JSON.stringify(state, null, 2)], { type:"application/json" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "daily-routines-backup.json";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+    toast("Backup downloaded");
+  });
+  document.getElementById("importFile").addEventListener("change", function(ev){
+    var f = ev.target.files && ev.target.files[0];
+    if(!f) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      try{
+        var s = JSON.parse(String(reader.result));
+        if(!s || !Array.isArray(s.items) || !Array.isArray(s.todos)) throw new Error("bad file");
+        state = { items:s.items, groups:Array.isArray(s.groups)?s.groups:[], todos:s.todos, completions:s.completions||{}, welcomed:true };
+        save(); render(); toast("Data imported");
+      }catch(e){ toast("That file couldn't be imported"); }
+      ev.target.value = "";
+    };
+    reader.readAsText(f);
+  });
+
+  var modal = document.getElementById("modalBack");
+  document.getElementById("clearBtn").addEventListener("click", function(){ modal.classList.add("open"); });
+  document.getElementById("modalCancel").addEventListener("click", function(){ modal.classList.remove("open"); });
+  modal.addEventListener("click", function(ev){ if(ev.target === modal) modal.classList.remove("open"); });
+  document.getElementById("modalConfirm").addEventListener("click", function(){
+    state = { items:[], groups:[], todos:[], completions:{}, welcomed:false };
+    save(); modal.classList.remove("open"); render(); toast("Everything cleared — fresh start");
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
