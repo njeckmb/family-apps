@@ -113,12 +113,13 @@ function tone(ac,f1,f2,t,d,type,peak){const o=ac.createOscillator(),g=ac.createG
 function sfxMove(){const ac=audioCtx();if(!ac)return;const t=ac.currentTime;tone(ac,210,95,t,0.09,"triangle",0.22);tone(ac,640,320,t,0.03,"sine",0.05);}
 function sfxSuccess(){const ac=audioCtx();if(!ac)return;const t=ac.currentTime;tone(ac,659.25,659.25,t,0.16,"sine",0.16);tone(ac,987.77,987.77,t+0.11,0.24,"sine",0.16);}
 function sfxWarning(){const ac=audioCtx();if(!ac)return;const t=ac.currentTime;tone(ac,196,185,t,0.14,"square",0.07);tone(ac,147,139,t+0.13,0.2,"square",0.07);}
-/* ============ Listen: Kokoro neural voice (runs 100% in the browser, free, no key) ============
-   Primary: kokoro-js (Kokoro-82M, Apache-2.0) via transformers.js, loaded lazily from CDN.
-   Config chain: WebGPU+q4f16, then WASM+q4, then WASM+q8 — the model (~46–92 MB depending
-   on config) + voice (~0.5 MB) download once and are cached by the browser. Generation runs
-   ahead of playback on a producer queue so sentences don't pause mid-lesson.
-   Fallback: device speechSynthesis with best-voice selection, so Listen always works. */
+/* ============ Listen: pre-generated narration first, Kokoro live voice as fallback ============
+   Primary: pre-generated MP3 clips shipped with the app in audio/<hash>.mp3, where <hash> is
+   the first 12 hex chars of the SHA-256 of the normalized spoken text. Instant on phones —
+   no model download, no on-device generation. If a clip is missing, the previous chain runs:
+   kokoro-js (Kokoro-82M, Apache-2.0) via transformers.js, config chain WebGPU+q4f16, then
+   WASM+q4, then WASM+q8, with generation ahead of playback on a producer queue; last resort
+   is device speechSynthesis with best-voice selection, so Listen always works. */
 const KOKORO_SRC="https://cdn.jsdelivr.net/npm/kokoro-js@1.2.1/dist/kokoro.web.js";
 const KOKORO_MODEL="onnx-community/Kokoro-82M-v1.0-ONNX";
 const KOKORO_VOICE="af_heart";
@@ -235,6 +236,57 @@ function speakWithDevice(text,btn,seq){
   u.onend=done;u.onerror=done;
   speechSynthesis.speak(u);
 }
+/* Synchronous SHA-256 (UTF-8 aware) — names the pre-generated clips. Must match the
+   generator: sha256 of the normalized text's UTF-8 bytes, first 12 hex chars. */
+function sha256hex(input){
+  const K=[0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+  function rr(v,a){return (v>>>a)|(v<<(32-a));}
+  const utf8=unescape(encodeURIComponent(input));const bytes=[];
+  for(let i=0;i<utf8.length;i++)bytes.push(utf8.charCodeAt(i));
+  const bitLen=bytes.length*8;bytes.push(0x80);
+  while(bytes.length%64!==56)bytes.push(0);
+  bytes.push(0,0,0,0,(bitLen>>>24)&255,(bitLen>>>16)&255,(bitLen>>>8)&255,bitLen&255);
+  let H=[0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19];
+  const W=new Array(64);
+  for(let b=0;b<bytes.length;b+=64){
+    for(let t=0;t<16;t++)W[t]=((bytes[b+t*4]<<24)|(bytes[b+t*4+1]<<16)|(bytes[b+t*4+2]<<8)|bytes[b+t*4+3])|0;
+    for(let t=16;t<64;t++){const s0=rr(W[t-15],7)^rr(W[t-15],18)^(W[t-15]>>>3);const s1=rr(W[t-2],17)^rr(W[t-2],19)^(W[t-2]>>>10);W[t]=(W[t-16]+s0+W[t-7]+s1)|0;}
+    let a=H[0],bb=H[1],c=H[2],d=H[3],e=H[4],f=H[5],g=H[6],h=H[7];
+    for(let t=0;t<64;t++){
+      const S1=rr(e,6)^rr(e,11)^rr(e,25);const ch=(e&f)^(~e&g);const t1=(h+S1+ch+K[t]+W[t])|0;
+      const S0=rr(a,2)^rr(a,13)^rr(a,22);const maj=(a&bb)^(a&c)^(bb&c);const t2=(S0+maj)|0;
+      h=g;g=f;f=e;e=(d+t1)|0;d=c;c=bb;bb=a;a=(t1+t2)|0;
+    }
+    H=[(H[0]+a)|0,(H[1]+bb)|0,(H[2]+c)|0,(H[3]+d)|0,(H[4]+e)|0,(H[5]+f)|0,(H[6]+g)|0,(H[7]+h)|0];
+  }
+  return H.map(function(x){return ("00000000"+(x>>>0).toString(16)).slice(-8);}).join("");
+}
+function pregenUrl(text){return "audio/"+sha256hex(text).slice(0,12)+".mp3";}
+/* Play the shipped clip for this exact text. Resolves when playback ends or is
+   superseded by a newer speak/stop; rejects when the clip can't be played
+   (missing file, decode/network error) so speakText can fall back. */
+function playPregen(text,btn,seq){
+  const player=_playerEl();
+  return new Promise(function(resolve,reject){
+    let settled=false;
+    const iv=setInterval(function(){if(seq!==_playSeq){cleanup();resolve();}},120);
+    function cleanup(){clearInterval(iv);player.onended=null;player.onerror=null;}
+    function fail(){if(settled)return;settled=true;cleanup();reject(new Error("pregen clip unavailable"));}
+    player.onended=function(){
+      if(settled)return;settled=true;cleanup();
+      if(seq===_playSeq){_isSpeaking=false;if(btn)btn.textContent="🔊 Listen";if(speakingBtn===btn)speakingBtn=null;}
+      resolve();
+    };
+    player.onerror=function(){fail();};
+    if(btn&&speakingBtn===btn)btn.textContent="⏸ Pause";
+    player.src=pregenUrl(text);
+    const pr=player.play();
+    if(pr&&typeof pr.catch==="function")pr.catch(function(){
+      if(seq!==_playSeq){if(!settled){settled=true;cleanup();resolve();}}
+      else fail();
+    });
+  });
+}
 function speakText(text,btn){
   const clean=(text||"").replace(/\s+/g," ").trim();
   if(!clean)return;
@@ -242,20 +294,20 @@ function speakText(text,btn){
   stopSpeaking();
   speakingBtn=btn;_isSpeaking=true;
   const seq=_playSeq;
-  if(_kokoroFailed){speakWithDevice(clean,btn,seq);return;}
-  if(btn)btn.textContent="⏳ Loading voice…";
-  playWithKokoro(clean,btn,seq).catch(function(){
-    if(seq===_playSeq)speakWithDevice(clean,btn,seq);
+  playPregen(clean,btn,seq).catch(function(){
+    if(seq!==_playSeq)return;
+    if(_kokoroFailed){speakWithDevice(clean,btn,seq);return;}
+    if(btn)btn.textContent="⏳ Loading voice…";
+    playWithKokoro(clean,btn,seq).catch(function(){
+      if(seq===_playSeq)speakWithDevice(clean,btn,seq);
+    });
   });
 }
 function listenBtn(text,label){
   const b=document.createElement("button");b.type="button";b.className="listen-btn";b.textContent="🔊 Listen";
   b.setAttribute("aria-label","Listen to "+(label||"this section"));
-  /* Warm-up: start loading the voice model the moment a Listen button is touched
-     or focused, so the download/init overlaps the tap instead of starting after it. */
-  const warm=function(){if(!_kokoroFailed)loadKokoro().catch(function(){});};
-  b.addEventListener("pointerdown",warm,{once:true});
-  b.addEventListener("focus",warm,{once:true});
+  /* No model warm-up: pre-generated clips are the primary path, so the Kokoro model
+     is only downloaded if a clip is actually missing and the fallback engages. */
   b.addEventListener("click",function(){speakText(text,b);});
   return b;
 }
