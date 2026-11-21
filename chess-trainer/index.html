@@ -114,9 +114,11 @@ function sfxMove(){const ac=audioCtx();if(!ac)return;const t=ac.currentTime;tone
 function sfxSuccess(){const ac=audioCtx();if(!ac)return;const t=ac.currentTime;tone(ac,659.25,659.25,t,0.16,"sine",0.16);tone(ac,987.77,987.77,t+0.11,0.24,"sine",0.16);}
 function sfxWarning(){const ac=audioCtx();if(!ac)return;const t=ac.currentTime;tone(ac,196,185,t,0.14,"square",0.07);tone(ac,147,139,t+0.13,0.2,"square",0.07);}
 /* ============ Listen: Kokoro neural voice (runs 100% in the browser, free, no key) ============
-   Primary: kokoro-js (Kokoro-82M, Apache-2.0) via transformers.js, loaded lazily from CDN on
-   first Listen tap. The q8 model (~92 MB) + voice (~0.5 MB) download once and are cached by
-   the browser. Fallback: device speechSynthesis with best-voice selection, so Listen always works. */
+   Primary: kokoro-js (Kokoro-82M, Apache-2.0) via transformers.js, loaded lazily from CDN.
+   Config chain: WebGPU+q4f16, then WASM+q4, then WASM+q8 — the model (~46–92 MB depending
+   on config) + voice (~0.5 MB) download once and are cached by the browser. Generation runs
+   ahead of playback on a producer queue so sentences don't pause mid-lesson.
+   Fallback: device speechSynthesis with best-voice selection, so Listen always works. */
 const KOKORO_SRC="https://cdn.jsdelivr.net/npm/kokoro-js@1.2.1/dist/kokoro.web.js";
 const KOKORO_MODEL="onnx-community/Kokoro-82M-v1.0-ONNX";
 const KOKORO_VOICE="af_heart";
@@ -135,8 +137,15 @@ function loadKokoro(){
   if(_kokoro)return Promise.resolve(_kokoro);
   if(_kokoroFailed)return Promise.reject(new Error("Kokoro unavailable"));
   if(!_kokoroPromise){
-    _kokoroPromise=Promise.resolve().then(function(){return import(KOKORO_SRC);}).then(function(mod){
-      return mod.KokoroTTS.from_pretrained(KOKORO_MODEL,{dtype:"q8",device:"wasm"});
+    /* Fastest first: WebGPU + q4f16 (small download, GPU inference). Then WASM + q4
+       (half the q8 download, faster on CPU). Last resort: the known-good WASM + q8. */
+    const configs=[{dtype:"q4f16",device:"webgpu"},{dtype:"q4",device:"wasm"},{dtype:"q8",device:"wasm"}];
+    _kokoroPromise=import(KOKORO_SRC).then(function(mod){
+      let chain=Promise.reject(new Error("start"));
+      configs.forEach(function(cfg){
+        chain=chain.catch(function(){return mod.KokoroTTS.from_pretrained(KOKORO_MODEL,cfg);});
+      });
+      return chain;
     }).then(function(tts){_kokoro=tts;return tts;},function(err){_kokoroFailed=true;_kokoroPromise=null;throw err;});
   }
   return _kokoroPromise;
@@ -147,7 +156,7 @@ function splitForSpeech(text){
   const chunks=[];
   parts.forEach(function(s){
     s=s.trim();if(!s)return;
-    while(s.length>280){let cut=s.lastIndexOf(", ",279);if(cut<80)cut=s.lastIndexOf(" ",279);if(cut<80)cut=280;chunks.push(s.slice(0,cut).trim());s=s.slice(cut).trim();}
+    while(s.length>160){let cut=s.lastIndexOf(", ",159);if(cut<60)cut=s.lastIndexOf(" ",159);if(cut<60)cut=160;chunks.push(s.slice(0,cut).trim());s=s.slice(cut).trim();}
     if(s)chunks.push(s);
   });
   return chunks.length?chunks:[clean];
@@ -174,11 +183,25 @@ function chunkUrl(text){
   p.catch(function(){if(_audioCache.get(text)===p)_audioCache.delete(text);});
   return p;
 }
+/* Generation runs on a single producer queue, ahead of playback: while sentence N
+   is playing, sentences N+1, N+2… are already being generated, so playback never
+   waits on the model mid-lesson (the old loop generated each sentence only after
+   the previous one finished playing — that gap was the mid-playback pausing). */
+let _producerTail=Promise.resolve();
+function scheduleGenerate(text,seq){
+  const run=_producerTail.then(function(){
+    if(seq!==_playSeq)throw new Error("superseded");
+    return chunkUrl(text);
+  });
+  _producerTail=run.catch(function(){});
+  return run;
+}
 async function playWithKokoro(text,btn,seq){
   const chunks=splitForSpeech(text);const player=_playerEl();
+  const pending=chunks.map(function(c){return scheduleGenerate(c,seq);});
   for(let i=0;i<chunks.length;i++){
     if(seq!==_playSeq)return;
-    const url=await chunkUrl(chunks[i]);
+    const url=await pending[i];
     if(seq!==_playSeq)return;
     if(i===0&&btn&&speakingBtn===btn)btn.textContent="⏸ Pause";
     await new Promise(function(resolve){
@@ -228,6 +251,11 @@ function speakText(text,btn){
 function listenBtn(text,label){
   const b=document.createElement("button");b.type="button";b.className="listen-btn";b.textContent="🔊 Listen";
   b.setAttribute("aria-label","Listen to "+(label||"this section"));
+  /* Warm-up: start loading the voice model the moment a Listen button is touched
+     or focused, so the download/init overlaps the tap instead of starting after it. */
+  const warm=function(){if(!_kokoroFailed)loadKokoro().catch(function(){});};
+  b.addEventListener("pointerdown",warm,{once:true});
+  b.addEventListener("focus",warm,{once:true});
   b.addEventListener("click",function(){speakText(text,b);});
   return b;
 }
