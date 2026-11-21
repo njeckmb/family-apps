@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<meta name="color-scheme" content="light dark"/>
+<meta name="theme-color" content="#2f5d3a"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-title" content="Chess Trainer"/>
+<link rel="manifest" href="manifest.webmanifest"><link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"><link rel="apple-touch-icon" href="icon-192.png">
+<title>Chess Trainer — Shareable</title>
+<style>
+:root{
+  color-scheme:light dark;
+  --bg:#e9e4d2; --surface:#f6f1e1; --surface-2:#efe8d3; --text:#1d2a20; --dim:#5d6f61;
+  --border:#cfc5a4; --accent:#2f5d3a; --accent-ink:#f2ecdd; --brass:#8a6d12; --alert:#b3402e; --good:#2f7a3d;
+  --board-light:#ecdcb4; --board-dark:#769656;
+  --font-display:Georgia,"Iowan Old Style","Times New Roman",serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#10160f; --surface:#1a241a; --surface-2:#222d21; --text:#ece5cd; --dim:#9db8a4; --border:#3a4a38; --accent:#7fae62; --accent-ink:#14201a; --brass:#c9a227; --alert:#e0684f; --good:#8fce7d; --board-light:#d8c690; --board-dark:#5c7d47; }
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;font-size:16px;line-height:1.5}
+button,[role="button"],select,summary,input:not([type="checkbox"],[type="radio"]){min-height:2.25rem}
+button{font:inherit;cursor:pointer;color:inherit;background:none;border:none}
+.font-display{font-family:var(--font-display)}
+header{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--border);padding-top:env(safe-area-inset-top)}
+nav{max-width:48rem;margin:0 auto;display:flex;align-items:center;gap:.5rem;padding:.6rem 1rem}
+nav .navbtn{border-radius:.5rem;padding:.5rem .9rem;font-weight:600}
+nav .navbtn.active{background:var(--accent);color:var(--accent-ink)}
+main{max-width:48rem;margin:0 auto;padding:1.25rem 1rem 2.5rem}
+h1,h2,h3,h4{font-family:var(--font-display);line-height:1.2;margin:0}
+p{margin:0}
+.dim{color:var(--dim)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:.9rem;padding:1.25rem}
+.btn-accent{background:var(--accent);color:var(--accent-ink);border-radius:.5rem;padding:.65rem 1rem;font-weight:600;display:inline-block}
+.btn-outline{border:1px solid var(--border);border-radius:.5rem;padding:.6rem 1rem;font-weight:600;background:var(--surface)}
+.pill{border-radius:999px;padding:.4rem .75rem;font-size:.82rem;font-weight:500;background:var(--surface-2)}
+.pill.done{background:var(--accent);color:var(--accent-ink)}
+.pillbtn{border-radius:999px;padding:.45rem .8rem;font-size:.82rem;font-weight:500;background:var(--surface-2)}
+.pillbtn.done{background:var(--accent);color:var(--accent-ink)}
+.listen-btn{display:inline-flex;align-items:center;gap:.4rem;border:1px solid var(--border);background:var(--surface-2);border-radius:999px;padding:.4rem .8rem;font-size:.82rem;font-weight:600;margin-top:.5rem;min-height:2.25rem}
+.coach{margin-top:1rem;border:1px solid var(--border);background:var(--surface);border-radius:.6rem;padding:1rem;font-size:.95rem;line-height:1.6}
+.coach.alert{border-color:var(--alert)}
+.coach.good{border-color:var(--good)}
+.tip{margin-top:.75rem;border-left:4px solid var(--brass);background:var(--surface-2);padding:.6rem .8rem;font-size:.9rem;border-radius:.3rem}
+.board-wrap{margin:0 auto;width:100%;max-width:540px}
+.board-wrap.small{max-width:320px}
+.board-frame{position:relative;border:4px solid #4c3a26;border-radius:.5rem;overflow:hidden;box-shadow:0 10px 24px rgba(0,0,0,.18)}
+.board-grid{display:grid;grid-template-columns:repeat(8,1fr)}
+.sq{position:relative;display:flex;align-items:center;justify-content:center;aspect-ratio:1;padding:0;border-radius:0;min-height:0}
+.sq .coord{position:absolute;font-size:9px;font-weight:700;pointer-events:none}
+.sq .coord.rank{left:3px;top:2px}.sq .coord.file{right:3px;bottom:2px}
+.sq .dot{position:absolute;width:26%;height:26%;border-radius:50%;background:rgba(0,0,0,.25);pointer-events:none}
+.sq .ring{position:absolute;inset:4%;border-radius:50%;border:4px solid rgba(0,0,0,.3);pointer-events:none}
+.piece{font-size:clamp(24px,9vw,44px);line-height:1;pointer-events:none;filter:drop-shadow(0 2px 2px rgba(0,0,0,.3))}
+.board-wrap.small .piece{font-size:clamp(18px,6vw,28px)}
+.piece.w{color:#faf7ee;text-shadow:0 0 2px #222,0 1px 2px rgba(0,0,0,.55)}
+.piece.b{color:#191919;text-shadow:0 0 2px #ddd,0 1px 1px rgba(255,255,255,.25)}
+.arrows{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:5}
+.phase-tabs{display:flex;gap:.4rem;overflow-x:auto;padding-bottom:.3rem;margin-top:1rem;scrollbar-width:none}
+.phase-tabs::-webkit-scrollbar{display:none}
+.phase-tab{flex-shrink:0;text-align:left;border:1px solid var(--border);background:var(--surface);border-radius:.5rem;padding:.5rem .75rem}
+.phase-tab.active{background:var(--accent);color:var(--accent-ink)}
+.phase-tab .pt-k{display:block;font-size:.68rem;text-transform:uppercase;letter-spacing:.04em;opacity:.8}
+.phase-tab .pt-n{display:block;font-size:.88rem;font-weight:700}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-top:1rem}
+.stat-box{background:var(--surface);border-radius:.6rem;padding:.8rem;text-align:center}
+.progress-track{height:.65rem;border-radius:999px;background:var(--surface-2);overflow:hidden;margin-top:.5rem}
+.progress-fill{height:100%;border-radius:999px;background:var(--brass)}
+a{color:inherit}
+.install-box{margin-top:1.5rem}
+details.install{border:1px solid var(--border);border-radius:.7rem;padding:.9rem 1rem;background:var(--surface)}
+details.install summary{font-weight:700;cursor:pointer;min-height:2.25rem;display:flex;align-items:center}
+details.install ol{margin:.6rem 0 0;padding-left:1.3rem;line-height:1.7;font-size:.95rem}
+.moves-grid{display:grid;grid-template-columns:1fr 1fr;gap:.2rem 1rem;font-size:.9rem;margin-top:.4rem}
+@media(min-width:640px){.moves-grid{grid-template-columns:1fr 1fr 1fr}}
+</style>
+</head>
+<body>
+<header><nav aria-label="Main">
+  <button type="button" id="navHome" class="navbtn">♞ Stages</button>
+  <button type="button" id="navStats" class="navbtn">My stats</button>
+  <span class="dim" id="navCount" style="margin-left:auto;font-size:.9rem"></span>
+</nav></header>
+<main id="app"></main>
+
+<script>
+/* ============ SFX (WebAudio, no assets) ============ */
+let _ctx=null;
+function audioCtx(){try{if(!_ctx){const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return null;_ctx=new AC();}if(_ctx.state==="suspended")_ctx.resume();return _ctx;}catch(e){return null;}}
+function tone(ac,f1,f2,t,d,type,peak){const o=ac.createOscillator(),g=ac.createGain();o.type=type;o.frequency.setValueAtTime(f1,t);o.frequency.exponentialRampToValueAtTime(Math.max(f2,1),t+d);g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(peak,t+0.012);g.gain.exponentialRampToValueAtTime(0.0001,t+d);o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+d+0.05);}
+function sfxMove(){const ac=audioCtx();if(!ac)return;const t=ac.currentTime;tone(ac,210,95,t,0.09,"triangle",0.22);tone(ac,640,320,t,0.03,"sine",0.05);}
+function sfxSuccess(){const ac=audioCtx();if(!ac)return;const t=ac.currentTime;tone(ac,659.25,659.25,t,0.16,"sine",0.16);tone(ac,987.77,987.77,t+0.11,0.24,"sine",0.16);}
+function sfxWarning(){const ac=audioCtx();if(!ac)return;const t=ac.currentTime;tone(ac,196,185,t,0.14,"square",0.07);tone(ac,147,139,t+0.13,0.2,"square",0.07);}
+/* Listen via device speech synthesis */
+let speakingBtn=null;
+function speakText(text,btn){
+  if(!("speechSynthesis" in window)){return;}
+  if(speakingBtn===btn && speechSynthesis.speaking){speechSynthesis.cancel();if(btn)btn.textContent="🔊 Listen";speakingBtn=null;return;}
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(text.replace(/\s+/g," ").trim());
+  u.rate=1;
+  if(btn){btn.textContent="⏸ Pause";speakingBtn=btn;}
+  u.onend=u.onerror=function(){if(btn)btn.textContent="🔊 Listen";if(speakingBtn===btn)speakingBtn=null;};
+  speechSynthesis.speak(u);
+}
+function listenBtn(text,label){
+  const b=document.createElement("button");b.type="button";b.className="listen-btn";b.textContent="🔊 Listen";
+  b.setAttribute("aria-label","Listen to "+(label||"this section"));
+  b.addEventListener("click",function(){speakText(text,b);});
+  return b;
+}
+function el(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;return e;}
+function esc(s){return s;}
+
+/* ============ Chess engine (full rules) ============ */
+const START_FEN="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+function fileOf(sq){return sq%8;} function rankOf(sq){return 7-Math.floor(sq/8);}
+function squareName(sq){return "abcdefgh"[fileOf(sq)]+String(rankOf(sq)+1);}
+function parseSquare(n){const f="abcdefgh".indexOf(n[0]||"");const r=Number(n[1]||"1")-1;return (7-r)*8+f;}
+function colorOf(p){return p===p.toUpperCase()?"w":"b";}
+function typeOf(p){return p.toUpperCase();}
+function opposite(c){return c==="w"?"b":"w";}
+function parseFEN(fen){const parts=fen.trim().split(/\s+/);const board=new Array(64).fill(null);let idx=0;for(const ch of (parts[0]||"")){if(ch==="/")continue;if(/\d/.test(ch))idx+=Number(ch);else{board[idx]=ch;idx++;}}const turn=parts[1]==="b"?"b":"w";const cr=parts[2]||"-";const castling=cr==="-"?"":cr;const er=parts[3]||"-";const ep=er==="-"?-1:parseSquare(er);return{board,turn,castling,ep};}
+const KNIGHT_DELTAS=[[1,2],[2,1],[2,-1],[1,-2],[-1,-2],[-2,-1],[-2,1],[-1,2]];
+const KING_DELTAS=[[1,0],[1,1],[0,1],[-1,1],[-1,0],[-1,-1],[0,-1],[1,-1]];
+const BISHOP_DIRS=[[1,1],[1,-1],[-1,1],[-1,-1]]; const ROOK_DIRS=[[1,0],[-1,0],[0,1],[0,-1]];
+function onBoard(f,r){return f>=0&&f<8&&r>=0&&r<8;} function toIndex(f,r){return (7-r)*8+f;}
+function isSquareAttacked(state,sq,by){const board=state.board;const f=fileOf(sq),r=rankOf(sq);const pr=by==="w"?r-1:r+1;for(const df of[-1,1]){if(onBoard(f+df,pr)){const p=board[toIndex(f+df,pr)];if(p&&typeOf(p)==="P"&&colorOf(p)===by)return true;}}for(const d of KNIGHT_DELTAS){if(onBoard(f+d[0],r+d[1])){const p=board[toIndex(f+d[0],r+d[1])];if(p&&typeOf(p)==="N"&&colorOf(p)===by)return true;}}for(const d of KING_DELTAS){if(onBoard(f+d[0],r+d[1])){const p=board[toIndex(f+d[0],r+d[1])];if(p&&typeOf(p)==="K"&&colorOf(p)===by)return true;}}function slide(dirs,types){for(const d of dirs){let nf=f+d[0],nr=r+d[1];while(onBoard(nf,nr)){const p=board[toIndex(nf,nr)];if(p){if(colorOf(p)===by&&types.includes(typeOf(p)))return true;break;}nf+=d[0];nr+=d[1];}}return false;}if(slide(BISHOP_DIRS,["B","Q"]))return true;if(slide(ROOK_DIRS,["R","Q"]))return true;return false;}
+function findKing(state,color){return state.board.indexOf(color==="w"?"K":"k");}
+function inCheck(state,color){const k=findKing(state,color);if(k<0)return false;return isSquareAttacked(state,k,opposite(color));}
+function pseudoMoves(state,color){const board=state.board;const moves=[];const dir=color==="w"?1:-1;const startRank=color==="w"?1:6;const promoRank=color==="w"?7:0;
+for(let sq=0;sq<64;sq++){const piece=board[sq];if(!piece||colorOf(piece)!==color)continue;const type=typeOf(piece);const f=fileOf(sq),r=rankOf(sq);
+if(type==="P"){const pushPromo=function(to){if(rankOf(to)===promoRank){for(const pr of["Q","R","B","N"])moves.push({from:sq,to,promo:pr});}else moves.push({from:sq,to});};
+if(onBoard(f,r+dir)){const one=toIndex(f,r+dir);if(!board[one]){pushPromo(one);if(r===startRank){const two=toIndex(f,r+2*dir);if(!board[two])moves.push({from:sq,to:two});}}}
+for(const df of[-1,1]){if(!onBoard(f+df,r+dir))continue;const to=toIndex(f+df,r+dir);const t=board[to];if(t&&colorOf(t)!==color)pushPromo(to);else if(to===state.ep)moves.push({from:sq,to});}
+}else if(type==="N"||type==="K"){const deltas=type==="N"?KNIGHT_DELTAS:KING_DELTAS;for(const d of deltas){if(!onBoard(f+d[0],r+d[1]))continue;const to=toIndex(f+d[0],r+d[1]);const t=board[to];if(!t||colorOf(t)!==color)moves.push({from:sq,to});}
+if(type==="K"){const home=color==="w"?60:4;if(sq===home&&!inCheck(state,color)){const enemy=opposite(color);const rights=state.castling;const tryCastle=function(right,empty,safe,rookFrom,to){if(!rights.includes(right))return;if(empty.some(s=>board[s]))return;const rook=board[rookFrom];if(!rook||typeOf(rook)!=="R"||colorOf(rook)!==color)return;if(safe.some(s=>isSquareAttacked(state,s,enemy)))return;moves.push({from:sq,to});};
+if(color==="w"){tryCastle("K",[61,62],[61,62],63,62);tryCastle("Q",[59,58,57],[59,58],56,58);}else{tryCastle("k",[5,6],[5,6],7,6);tryCastle("q",[3,2,1],[3,2],0,2);}}}
+}else{const dirs=type==="B"?BISHOP_DIRS:type==="R"?ROOK_DIRS:BISHOP_DIRS.concat(ROOK_DIRS);for(const d of dirs){let nf=f+d[0],nr=r+d[1];while(onBoard(nf,nr)){const to=toIndex(nf,nr);const t=board[to];if(!t)moves.push({from:sq,to});else{if(colorOf(t)!==color)moves.push({from:sq,to});break;}nf+=d[0];nr+=d[1];}}}}
+return moves;}
+function applyMove(state,move){const board=state.board.slice();const piece=board[move.from];if(!piece)return state;const color=colorOf(piece);board[move.from]=null;
+if(typeOf(piece)==="P"&&move.to===state.ep&&!board[move.to]&&fileOf(move.from)!==fileOf(move.to)){board[toIndex(fileOf(move.to),rankOf(move.from))]=null;}
+if(typeOf(piece)==="K"&&Math.abs(move.to-move.from)===2){if(move.to===62){board[61]=board[63];board[63]=null;}if(move.to===58){board[59]=board[56];board[56]=null;}if(move.to===6){board[5]=board[7];board[7]=null;}if(move.to===2){board[3]=board[0];board[0]=null;}}
+if(typeOf(piece)==="P"&&move.promo)board[move.to]=color==="w"?move.promo:move.promo.toLowerCase();else board[move.to]=piece;
+let castling=state.castling;if(typeOf(piece)==="K")castling=castling.replace(color==="w"?"K":"k","").replace(color==="w"?"Q":"q","");
+const rookHomes={63:"K",56:"Q",7:"k",0:"q"};if(rookHomes[move.from])castling=castling.replace(rookHomes[move.from],"");if(rookHomes[move.to])castling=castling.replace(rookHomes[move.to],"");
+const ep=(typeOf(piece)==="P"&&Math.abs(move.to-move.from)===16)?(move.to+move.from)/2:-1;
+return{board,turn:opposite(state.turn),castling,ep};}
+function legalMoves(state,color){color=color||state.turn;const st={board:state.board,turn:color,castling:state.castling,ep:state.ep};return pseudoMoves(st,color).filter(function(m){const n=applyMove(st,m);return !inCheck(n,color);});}
+function parseUci(uci){const from=parseSquare(uci.slice(0,2));const to=parseSquare(uci.slice(2,4));const promo=uci[4]?uci[4].toUpperCase():undefined;return promo?{from,to,promo}:{from,to};}
+function toUci(m){return squareName(m.from)+squareName(m.to)+(m.promo?m.promo.toLowerCase():"");}
+function moveToSan(state,move){const piece=state.board[move.from];if(!piece)return toUci(move);const type=typeOf(piece);const color=colorOf(piece);const captured=state.board[move.to]!=null||(type==="P"&&move.to===state.ep&&fileOf(move.from)!==fileOf(move.to));let san;
+if(type==="K"&&Math.abs(move.to-move.from)===2)san=move.to>move.from?"O-O":"O-O-O";
+else if(type==="P"){san=captured?"abcdefgh"[fileOf(move.from)]+"x"+squareName(move.to):squareName(move.to);if(move.promo)san+="="+move.promo;}
+else{const others=legalMoves(state,color).filter(function(m){return m.to===move.to&&m.from!==move.from&&state.board[m.from]&&typeOf(state.board[m.from])===type;});let dis="";if(others.length>0){const sf=others.some(m=>fileOf(m.from)===fileOf(move.from));const sr=others.some(m=>rankOf(m.from)===rankOf(move.from));if(!sf)dis="abcdefgh"[fileOf(move.from)];else if(!sr)dis=String(rankOf(move.from)+1);else dis=squareName(move.from);}san=type+dis+(captured?"x":"")+squareName(move.to);}
+const next=applyMove(state,move);if(inCheck(next,next.turn))san+=legalMoves(next).length===0?"#":"+";return san;}
+function gameStatus(state){const mv=legalMoves(state);const chk=inCheck(state,state.turn);if(mv.length===0)return chk?"checkmate":"stalemate";return chk?"check":"playing";}
+const VALUES={P:100,N:320,B:330,R:500,Q:900,K:0};
+const PST={P:[0,0,0,0,0,0,0,0,5,10,10,-20,-20,10,10,5,5,-5,-10,0,0,-10,-5,5,0,0,0,20,20,0,0,0,5,5,10,25,25,10,5,5,10,10,20,30,30,20,10,10,50,50,50,50,50,50,50,50,0,0,0,0,0,0,0,0],N:[-50,-40,-30,-30,-30,-30,-40,-50,-40,-20,0,5,5,0,-20,-40,-30,5,10,15,15,10,5,-30,-30,0,15,20,20,15,0,-30,-30,5,15,20,20,15,5,-30,-30,0,10,15,15,10,0,-30,-40,-20,0,0,0,0,-20,-40,-50,-40,-30,-30,-30,-30,-40,-50],B:[-20,-10,-10,-10,-10,-10,-10,-20,-10,5,0,0,0,0,5,-10,-10,10,10,10,10,10,10,-10,-10,0,10,10,10,10,0,-10,-10,5,5,10,10,5,5,-10,-10,0,5,10,10,5,0,-10,-10,0,0,0,0,0,0,-10,-20,-10,-10,-10,-10,-10,-10,-20],R:[0,0,0,5,5,0,0,0,-5,0,0,0,0,0,0,-5,-5,0,0,0,0,0,0,-5,-5,0,0,0,0,0,0,-5,-5,0,0,0,0,0,0,-5,-5,0,0,0,0,0,0,-5,5,10,10,10,10,10,10,5,0,0,0,0,0,0,0,0],Q:[-20,-10,-10,-5,-5,-10,-10,-20,-10,0,5,0,0,5,0,-10,-10,5,5,5,5,5,5,-10,0,0,5,5,5,5,0,-5,-5,0,5,5,5,5,0,-5,-10,0,5,5,5,5,0,-10,-10,0,0,0,0,0,0,-10,-20,-10,-10,-5,-5,-10,-10,-20],K:[20,30,10,0,0,10,30,20,20,20,0,0,0,0,20,20,-10,-20,-20,-20,-20,-20,-20,-10,-20,-30,-30,-40,-40,-30,-30,-20,-30,-40,-40,-50,-50,-40,-40,-30,-30,-40,-40,-50,-50,-40,-40,-30,-30,-40,-40,-50,-50,-40,-40,-30,-30,-40,-40,-50,-50,-40,-40,-30]};
+function evaluate(state){let s=0;for(let sq=0;sq<64;sq++){const p=state.board[sq];if(!p)continue;const t=typeOf(p);const tab=PST[t];const base=VALUES[t]||0;if(!tab)continue;if(colorOf(p)==="w")s+=base+(tab[sq]||0);else{const mir=(7-Math.floor(sq/8))*8+(sq%8);s-=base+(tab[mir]||0);}}return s;}
+function search(state,depth,alpha,beta){const moves=legalMoves(state);if(moves.length===0){if(inCheck(state,state.turn))return state.turn==="w"?-100000-depth:100000+depth;return 0;}if(depth===0)return evaluate(state);const ordered=moves.slice().sort(function(a,b){const av=state.board[a.to]?(VALUES[typeOf(state.board[a.to])]||0):0;const bv=state.board[b.to]?(VALUES[typeOf(state.board[b.to])]||0):0;return bv-av;});
+if(state.turn==="w"){let best=-Infinity;for(const m of ordered){best=Math.max(best,search(applyMove(state,m),depth-1,alpha,beta));alpha=Math.max(alpha,best);if(beta<=alpha)break;}return best;}
+let best=Infinity;for(const m of ordered){best=Math.min(best,search(applyMove(state,m),depth-1,alpha,beta));beta=Math.min(beta,best);if(beta<=alpha)break;}return best;}
+function opponentMove(state,level){const moves=legalMoves(state);if(!moves.length)return null;const color=state.turn;const sign=color==="w"?1:-1;
+if(level===1){const scored=moves.map(function(move){const next=applyMove(state,move);let v=sign*evaluate(next);if(gameStatus(next)==="checkmate")v+=100000;return{move,value:v+Math.random()*260};});scored.sort((a,b)=>b.value-a.value);const pick=Math.random()<0.72?scored[0]:scored[Math.floor(Math.random()*Math.min(4,scored.length))];return (pick||scored[0]).move;}
+const depth=level===2?2:3;let bm=null,bv=-Infinity;for(const m of moves){const v=sign*search(applyMove(state,m),depth-1,-Infinity,Infinity);if(v>bv){bv=v;bm=m;}}return bm;}
+function materialBalance(state){let s=0;for(const p of state.board){if(!p)continue;const v=VALUES[typeOf(p)]||0;s+=colorOf(p)==="w"?v:-v;}return Math.round(s/100);}
+function capturedBy(state,byColor){const start={P:8,N:2,B:2,R:2,Q:1};const rem={P:0,N:0,B:0,R:0,Q:0};const victim=opposite(byColor);for(const p of state.board){if(!p||colorOf(p)!==victim)continue;const t=typeOf(p);if(t in rem)rem[t]++;}const out=[];for(const t of["Q","R","B","N","P"]){const miss=(start[t]||0)-(rem[t]||0);for(let i=0;i<miss;i++)out.push(victim==="w"?t:t.toLowerCase());}return out;}
+const GLYPHS={K:"♔",Q:"♕",R:"♖",B:"♗",N:"♘",P:"♙",k:"♚",q:"♛",r:"♜",b:"♝",n:"♞",p:"♟"};
+const PIECE_VALUES={P:100,N:320,B:330,R:500,Q:900,K:0};
+</script>
+<script>
+/* ============ Curriculum ============ */
+const STAGE_ORDER=["opening","middlegame","endgame"];
+const PHASE_ORDER=["tutorial","guided","alerted","freeplay"];
+const PHASE_META={tutorial:{name:"Tutorial",short:"Learn the strategy"},guided:{name:"Guided play",short:"Step-by-step, with a coach"},alerted:{name:"Alerted play",short:"Play — mistakes get flagged"},freeplay:{name:"Free play",short:"On your own, vs the computer"}};
+const STAGES=[
+{id:"opening",name:"The Opening",tagline:"First 10–15 moves",intro:"The opening is about getting your army out efficiently and safely. You are not trying to win yet — you are building a position where winning becomes possible."},
+{id:"middlegame",name:"The Middlegame",tagline:"Plans, tactics & pressure",intro:"Once the pieces are developed, the middlegame is where games are decided: spotting tactics, improving your worst piece, and attacking where you are stronger."},
+{id:"endgame",name:"The Endgame",tagline:"Convert the advantage",intro:"When queens and most pieces come off, the king becomes a fighter and passed pawns become queens-in-waiting. Technique here wins games that were 'equal' a move earlier."}];
+function stageName(id){const s=STAGES.find(x=>x.id===id);return s?s.name:id;}
+const LESSONS={
+opening:{title:"Opening strategy: build first, fight second",intro:"Every strong opening follows the same logic, whatever the specific moves. Learn the logic and you can handle any first moves your opponent tries.",sections:[
+{heading:"1. Fight for the center",body:"The four central squares (d4, e4, d5, e5) are the most valuable real estate on the board. A piece or pawn there controls more squares and can swing to either side of the board. That is why 1.e4 and 1.d4 are the most popular first moves in chess: the pawn claims central space and opens lines for two pieces at once.",fen:"rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",tip:"If you can plant a pawn in the center and keep it there, do it. Central pawns cramp your opponent and free your pieces."},
+{heading:"2. Develop your pieces — knights before bishops",body:"Development means moving each knight and bishop off its starting square to a square where it does something. Knights usually go first because their best squares (f3, c3, f6, c6) are almost always good. Bishops often wait a move or two, until the pawn structure shows where they will bite. Moving the same piece twice in the opening, or pushing many pawns, wastes time your opponent uses to develop instead.",fen:"r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 4",tip:"Count developed pieces. If you have four pieces out and your opponent has two, you are winning the opening — even if nothing has been captured."},
+{heading:"3. Castle early — king safety is not optional",body:"In the opening and middlegame your king is a liability in the center, where lines open fastest. Castling does two jobs in one move: it tucks the king behind a wall of pawns and connects your rooks. Aim to castle within the first ten moves. Games at every level are lost by a king caught in the center when the position blows open.",fen:"r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/2NP1N2/PPP2PPP/R1BQK2R b KQkq - 3 5",tip:"If you are not sure what to do in the opening, ask: 'Can I castle soon, or develop one more piece?' That question is rarely wrong."},
+{heading:"4. Connect the rooks and don't bring the queen out early",body:"The opening is finished when your rooks are connected — each defending the other, with nothing between them. The queen is your strongest piece, which is exactly why it stays home early: every time an enemy pawn or knight attacks it, you spend a move retreating while your opponent develops for free. Bring the queen out only when it wins something concrete.",tip:"A handy checklist for any opening position: center claimed? Pieces developed? King castled? Rooks connected? Four yeses and the opening went well."}],
+recap:["Claim the center with pawns and support it with pieces.","Develop a new piece every move; knights before bishops.","Castle within the first ten moves.","Finish with connected rooks; keep the queen home until the fight starts."]},
+middlegame:{title:"Middlegame strategy: tactics serve a plan",intro:"The middlegame looks chaotic, but strong players navigate it with two habits: they constantly scan for tactics, and between tactics they quietly improve their position.",sections:[
+{heading:"1. Every move, scan for tactics: checks, captures, threats",body:"Most middlegame games at club level are decided by a tactic — a short forced sequence that wins material. Before choosing a move, run the scan in order: What checks exist (for both sides)? What captures? What threats? A fork — one piece attacking two targets at once — is the most common winner. Knights fork best because they jump; a knight landing with check while also eyeing a rook or queen is a classic pattern to burn into memory.",fen:"r1bq1rk1/ppp2ppp/2n5/3nP3/3P4/2N2N2/PPP2PPP/R1BQ1RK1 b - - 0 8",tip:"When a knight lands near the enemy king, immediately check what else it attacks. Forks hide where a knight move gives check."},
+{heading:"2. Find your worst piece and improve it",body:"When there is no tactic, don't shuffle aimlessly. Ask which of your pieces is doing the least — a bishop staring at its own pawns, a rook behind a closed file, a knight on the rim — and give it a better square. A single improved piece often creates the next tactic by itself. This one habit turns 'I don't know what to do' positions into plans.",tip:"'Knight on the rim is dim' — a knight on a3 or h3 controls few squares and takes two moves to matter again. Centralize it."},
+{heading:"3. Attack where you have more pieces",body:"A successful attack needs local superiority: more attackers than defenders around the target. Count before you commit. Point every piece you can at the enemy king's pawn shield or at a weak pawn, and only start the fireworks when the count favors you. If it doesn't, build up — or switch sides of the board, where the count might.",fen:"r2q1rk1/pp1bppbp/2np1np1/8/3NP3/2N1BP2/PPP3PP/R2QKB1R w KQ - 3 8",tip:"Sacrifices 'for the attack' only work when the pieces behind them outnumber the defenders. Count attackers, count defenders, then decide."},
+{heading:"4. Trade when ahead, complicate when behind",body:"When you are up material, every trade brings the endgame — where your extra piece matters most — one step closer, and gives your opponent fewer chances to swindle you. When you are behind, do the opposite: keep pieces on, keep the position tense, and give your opponent hard decisions. Trades are never neutral; they always favor one side's plan.",tip:"Up a piece and not sure what to do? Offer a trade. Your opponent must either accept (good for you) or retreat (also good for you)."}],
+recap:["Scan checks, captures, threats — in that order — before every move.","Forks win more games than any other tactic; watch enemy knights near your king.","With no tactic available, improve your worst-placed piece.","Attack only with local superiority; trade pieces when ahead, avoid trades when behind."]},
+endgame:{title:"Endgame strategy: the king fights, pawns promote",intro:"The endgame inverts opening logic. The king you hid all game becomes one of your strongest pieces, and humble pawns — not queens — decide most endings.",sections:[
+{heading:"1. Activate your king",body:"With queens off the board there is little danger of checkmate, so the king marches into the fight: it attacks pawns, defends its own, and shoulders the enemy king away from key squares. In most king-and-pawn endings the position of the kings matters more than the pawn count. If your king is stuck on the back rank while theirs is centralized, you are probably losing — even with equal pawns.",fen:"8/5k2/3p4/1p1Pp2p/pP1P1P1P/P4P2/8/6K1 w - - 0 1",tip:"Endgame rule of thumb: if queens are off, your king should be heading toward the center or toward the pawns it can eat."},
+{heading:"2. Create a passed pawn — then push it",body:"A passed pawn has no enemy pawn ahead of it or guarding its path. It is the endgame's most valuable asset because it forces enemy pieces into passive defense and can only be stopped by giving up material. Create one by trading pawns where you have a majority, then escort it: king in front or beside it, rook behind it, and push.",fen:"8/pp3k2/2p3p1/3pP2p/3P1P1P/2P3P1/PP6/6K1 w - - 0 1",tip:"Rooks belong behind passed pawns — yours to push it forward, your opponent's to slow it down."},
+{heading:"3. King and pawn technique: opposition and key squares",body:"When your king stands directly in front of a passed pawn with one square between it and the enemy king, you hold the 'opposition' — the enemy king must step aside and let yours advance. March your king to the squares in front of your pawn (its key squares) and the pawn promotes by force. This is the single most useful piece of endgame technique a learner can own.",fen:"8/8/4k3/4P3/4K3/8/8/8 w - - 0 1",tip:"King in front of the pawn, pawn advances only when the king controls the square ahead. King first, pawn second."},
+{heading:"4. Know the basic mates and the rook's cut-off",body:"A rook wins vast numbers of endgames by cutting the enemy king off: place the rook on a file or rank the king cannot cross, herd the king to the edge with checks and king support, and mate or gobble every pawn. And burn in the basics — queen mates alone, rook mates with king help, two bishops mate, but a lone bishop or knight cannot mate at all, which makes some 'winning' positions dead draws.",fen:"6k1/5ppp/8/8/8/8/5PPP/4R1K1 w - - 0 1",tip:"A rook check from the side, with your king nearby and the enemy king on the edge, ends games. Drive the king to the edge before checking it there."}],
+recap:["Once queens are off, march your king into the fight.","Create a passed pawn, put a rook behind it, and push it.","Take the opposition: king in front of the pawn, king moves first.","Cut the enemy king off with your rook and drive it to the edge."]}};
+const GUIDED={
+opening:[
+{id:"opening-italian",title:"The Italian Game: a model opening",intro:"Play White through the Italian Game, one of the oldest and most instructive openings. Each of your moves follows one rule from the tutorial. The coach explains as you go.",fen:START_FEN,orientation:"w",steps:[
+{uci:"e2e4",coach:"1.e4 — claim the center. The pawn takes e4, opens diagonals for your queen and king's bishop, and stakes your claim to d5 and f5 as well."},
+{uci:"e7e5",opponent:true,coach:"Black answers in kind: 1…e5, claiming the other half of the center."},
+{uci:"g1f3",coach:"2.Nf3 — develop a knight and attack the e5 pawn at the same time. Two jobs in one move is what efficient development looks like."},
+{uci:"b8c6",opponent:true,coach:"Black defends with 2…Nc6, developing a piece while protecting e5."},
+{uci:"f1c4",coach:"3.Bc4 — the Italian bishop. It eyes f7, the weakest square in Black's camp because only the king defends it. Bishops love open diagonals."},
+{uci:"f8c5",opponent:true,coach:"Black mirrors you with 3…Bc5 — this is the Giuoco Piano, the 'quiet game'."},
+{uci:"c2c3",coach:"4.c3 — a quiet move with a big idea: prepare d2–d4 to build a full pawn center. Pawn moves in the opening are good when they prepare development or a central break."},
+{uci:"g8f6",opponent:true,coach:"Black develops 4…Nf6, pressuring your e4 pawn."},
+{uci:"d2d4",coach:"5.d4 — the break you prepared. You strike in the center while Black still hasn't castled. When your development is ahead, open the position."},
+{uci:"e5d4",opponent:true,coach:"Black captures 5…exd4 rather than let the pawn storm roll on."},
+{uci:"c3d4",coach:"6.cxd4 — recapture and now your two pawns stand side by side on d4 and e4: a textbook pawn center. Your pieces have space, your bishops have diagonals, and Black must react to you. That is a successful opening."}]},
+{id:"opening-defend",title:"Defending the center as Black",intro:"Now sit behind the black pieces. White plays the Ruy Lopez setup; your job is to develop calmly, defend e5, and castle on time.",fen:START_FEN,orientation:"b",steps:[
+{uci:"e2e4",opponent:true,coach:"White opens 1.e4, claiming the center."},
+{uci:"e7e5",coach:"1…e5 — meet a central claim with your own. Your pawn controls d4 and f4 and opens lines for your queen and bishop."},
+{uci:"g1f3",opponent:true,coach:"White develops 2.Nf3 and immediately attacks your e5 pawn."},
+{uci:"b8c6",coach:"2…Nc6 — the natural defense: develop a knight and protect e5 in the same move. Never leave a central pawn hanging."},
+{uci:"f1b5",opponent:true,coach:"3.Bb5 — the Ruy Lopez. The bishop pins your knight against your king, indirectly pressuring e5 again."},
+{uci:"a7a6",coach:"3…a6 — the Morphy Defense. Ask the bishop a question: capture or retreat? One pawn move, played because it serves the plan — not as a reflex."},
+{uci:"b5a4",opponent:true,coach:"White retreats 4.Ba4, keeping the pin and the bishop."},
+{uci:"g8f6",coach:"4…Nf6 — develop your second knight, attacking e4 and preparing to castle. Development first; the pin will sort itself out."},
+{uci:"e1g1",opponent:true,coach:"White castles 5.O-O — king safe, rook to the e-file. Notice how early strong players do this."},
+{uci:"f8e7",coach:"5…Be7 — develop the bishop and, just as important, clear the path for your own castling next move. You are one move from a fully successful opening: center held, pieces out, king about to be safe."}]}],
+middlegame:[
+{id:"middlegame-fork",title:"The royal fork, step by step",intro:"A knight, one careless pawn kick, and a royal fork. Play White and watch how a quiet knight move turns into a queen hunt — the most profitable pattern in the middlegame.",fen:"r4k2/ppp3bp/2np1n2/2b5/2B1P3/2N2N2/PPPP1PPP/R1BQ1RK1 w - - 0 1",orientation:"w",steps:[
+{uci:"f3g5",coach:"1.Ng5 — the knight leaps toward Black's king, eyeing two squares at once: f7 and e6. A knight this close to the king is a tactic waiting for a trigger."},
+{uci:"h7h6",opponent:true,coach:"Black kicks the knight with 1…h6, expecting it to retreat. That pawn move is the trigger."},
+{uci:"g5e6",coach:"2.Nxe6+! — the knight dives in: it captures the pawn WITH CHECK and attacks the queen on d8 at the same time. A royal fork. And the king can't capture back — your bishop on c4 guards e6."},
+{uci:"f8e8",opponent:true,coach:"The king flees to e8. The fork has done its work — the queen is stranded and lost."},
+{uci:"e6d8",coach:"3.Nxd8 — collect the queen. This capture is the payoff the entire sequence was aimed at."},
+{uci:"a8d8",opponent:true,coach:"Black recaptures with 3…Rxd8, but count the trade: your one knight bought a pawn and the queen. Whenever a knight can land with check while also attacking the queen, look twice — no pattern in chess pays better."}]},
+{id:"middlegame-attack",title:"Building the kingside attack",intro:"Play White and learn the classic recipe: point pieces at the king, open a file, and let the rook deliver the final blow.",fen:"r1bq1rk1/pp2ppbp/2np1np1/8/3NP3/2N1BP2/PPP3PP/R2QKB1R w KQ - 0 1",orientation:"w",steps:[
+{uci:"d1d2",coach:"1.Qd2 — connect your queen to the kingside story: she supports the bishop's future diagonal and steps off the d-file so your rooks can use it. Quiet moves that aim pieces at the king are how attacks are built."},
+{uci:"c8d7",opponent:true,coach:"Black develops 1…Bd7, not sensing danger yet."},
+{uci:"f3f4",coach:"2.f4 — claim more kingside space and prepare f5, prying at the g6 pawn that shields Black's king. Pawn storms work when your pieces are already pointing the right way."},
+{uci:"a8c8",opponent:true,coach:"Black plays 2…Rc8 on the other side of the board — pieces that can't help defend the king."},
+{uci:"f4f5",coach:"3.f5 — the lever lands. If Black captures on f5, your bishop or knight recaptures with the kingside wide open; if not, you capture on g6 and tear the shield away. Count the local pieces: your queen, two bishops, knight, and rook all bear on the kingside — Black has defenders for none of it. That count is why the attack works."}]}],
+endgame:[
+{id:"endgame-opposition",title:"Winning with the opposition",intro:"King and pawn against king — the most fundamental ending in chess. White's king must lead the way. Take the opposition and the pawn promotes itself.",fen:"8/8/4k3/4P3/4K3/8/8/8 w - - 0 1",orientation:"w",steps:[
+{uci:"e4d4",coach:"1.Kd4! — step toward the pawn's side but stay in front of it. The king leads; the pawn follows. (Pushing the pawn first lets Black's king block everything.)"},
+{uci:"e6e7",opponent:true,coach:"Black's king retreats straight back with 1…Ke7 — your pawn covers d6 and f6, so it can't angle in from the side."},
+{uci:"d4d5",coach:"2.Kd5! — the king penetrates to the pawn's flank, seizing the key squares the pawn needs for its march. Black's king is running out of room."},
+{uci:"e7d7",opponent:true,coach:"Black guards the e6 square with 2…Kd7, hoping to blockade the pawn one last time."},
+{uci:"e5e6",coach:"3.e6+! — NOW the pawn advances, with check: your king on d5 guards its path, Black's king is driven off the blockade, and e7 follows next with promotion behind it. King first, pawn second — that order is the whole technique."}]},
+{id:"endgame-rook",title:"The rook cut-off and the march",intro:"Rook endings are the most common in chess. Learn the cut-off: your rook fences the enemy king away from the pawn while yours escorts it home.",fen:"8/1p3k2/p7/2P5/1P1K4/P7/8/6R1 w - - 0 1",orientation:"w",steps:[
+{uci:"g1g5",coach:"1.Rg5 — the rook cuts the board in half. Black's king is fenced on the kingside, far from your queenside pawns. A rook's greatest endgame power is this fence."},
+{uci:"f7f6",opponent:true,coach:"Black pushes the king toward the fence: 1…Kf6, trying to attack the rook."},
+{uci:"g5g4",coach:"2.Rg4 — slide along the fence, keeping the king cut off while staying safe. The rook loses nothing by retreating along the rank — the fence is what matters, not the square."},
+{uci:"f6f5",opponent:true,coach:"Black's king steps to f5 — close enough to attack your rook and eye your pawns from the side."},
+{uci:"d4c3",coach:"3.Kc3 — bring the king to shepherd the queenside pawns forward: b4–b5 and c5–c6 come next, and Black's king — fenced off and a step behind — can never catch both the pawns and the rook. Cut off, escort, promote: the rook-ending recipe."}]}]};
+const ALERTED={
+opening:[
+{id:"opening-trap",title:"Don't grab that pawn",goal:"White to move. Black's knight just grabbed your e4 pawn (…Nxe4). Find the move that punishes it — it's mate in one.",fen:"r1bqkb1r/pppp1ppp/2n2n2/4p2Q/2B1N3/8/PPPP1PPP/RNB1K2R w KQkq - 0 1",orientation:"w",accept:["h5f7","c4f7"],bestNote:"Qxf7# — checkmate! The queen takes the pawn Black's knight just stopped defending, and there is no answer: the king can't capture her (your bishop on c4 guards f7), can't flee to e7 (your queen covers it), and d8 is blocked by Black's own queen. (The bishop capture Bxf7+ also wins material — the king can't take it for the same reason — but mate ends the game on the spot.) Lesson: a greedy pawn grab that undefends f7 or f2 is the classic opening trap.",mistakes:[{uci:["e4c5","e4g5","e4f6","e4d6","e4c3"],category:"King safety",explanation:"Retreating the attacked knight wastes the gift Black just gave you. Black's knight on e4 left f7 defended by the king alone — that weakness lasts one move. In the opening, a tactic against the king outranks saving a piece for later."},{test:"hangs",category:"Hanging piece",explanation:"That move leaves one of your pieces where Black can take it for free. In the opening every tempo matters — giving away a piece (or even a pawn with no compensation) puts you behind in material and development at once."}],genericBad:"Not the move that punishes Black. The knight's trip to e4 left a specific square weak — look at what defended f7 before the knight moved, and strike there while the chance lasts."},
+{id:"opening-develop",title:"Develop with tempo",goal:"White to move. It's move 3 of a Queen's Gambit Declined. Find the developing move that also builds your center and prepares castling.",fen:"rnbqkb1r/ppp2ppp/4pn2/3p2B1/2PP4/8/PP2PPPP/RN1QKBNR w KQkq - 0 1",orientation:"w",accept:["b1c3"],bestNote:"Nc3! — the model developing move: the knight comes out, defends the e4 square you'll want, supports the center, and clears the way for castling later. Knights before bishops, toward the center, with a job to do.",mistakes:[{uci:["d1a4"],category:"Early queen sortie",explanation:"Qa4+ is the classic beginner trap in reverse: check feels strong, but Black blocks with …Nc6 or …Bd7 — developing a piece while chasing your queen away. You spent a move; Black gained one. The queen comes out early only when it wins something concrete."},{uci:["c4d5"],category:"Releasing the tension",explanation:"cxd5 trades away your central tension for nothing: Black recaptures and your c-pawn — the one pressuring Black's center — is gone. In the opening, keep central tension until a trade clearly favors you; the player who releases it usually eases the defender's job."},{uci:["g1f3"],category:"Development order",explanation:"Nf3 is a fine move in many positions, but here it walks into …dxc4 ideas less comfortably and, more importantly, Nc3 was doing double duty: developing while reinforcing the center before Black's …c5 break. Order matters — pick the developing move that covers the most jobs."},{test:"hangs",category:"Hanging piece",explanation:"That move leaves a piece en prise — Black captures it for free next move. Before confirming any opening move, glance at every enemy attacker touching your pieces."}],genericBad:"That develops less efficiently than the best move. Ask the opening checklist: which undeveloped piece can come out while also supporting the center? Knights first, and toward the middle."}],
+middlegame:[
+{id:"middlegame-fork-find",title:"Find the royal fork",goal:"White to move. Black's king on f8 and queen on d8 are both one knight's jump away from the same square. Find the fork.",fen:"3q1k2/ppp2ppp/2n5/8/3N4/8/PPP2PPP/3Q1RK1 w - - 0 1",orientation:"w",accept:["d4e6"],bestNote:"Ne6! — the knight lands on the one square that attacks both the king on f8 (check, so Black must answer it) and the queen on d8. After the king steps away, Nxd8 wins the queen for a knight. This is why you scan every knight landing square near the enemy king: forks hide there.",mistakes:[{uci:["d4b5","d4b3","d4f5","d4f3","d4e2","d4c6"],category:"Missed tactic",explanation:"Moving the knight anywhere else throws away the fork. From e6 the knight attacked king and queen at the same time. When a knight stands two jumps from the enemy king, check every landing square for a double attack before moving it."},{uci:["d1h5","d1f3","d1d3"],category:"Missed tactic",explanation:"Drifting with the queen refuses the tactic: Ne6 wins Black's queen for a knight, full stop. When a forcing move wins material by force, quiet moves aren't 'solid' — they're missed wins. Finish the checks-and-captures scan before choosing anything quiet."},{test:"hangs",category:"Hanging piece",explanation:"That move lets Black capture one of your pieces for nothing — and Ne6 was winning a queen. The first question on every move: 'What does this leave attacked?' The second: 'What wins by force?'"}],genericBad:"The tactic is a knight move. Look at every square your knight can reach and ask what two things it would attack at once — the king on f8 and the queen on d8 share exactly one such square."},
+{id:"middlegame-defend",title:"Spot the threat before it lands",goal:"White to move. Black's queen on h4 and knight on g4 are both staring at your h2 pawn — …Qxh2 is checkmate next move if you let it happen. Defend the mate first, then play chess.",fen:"r1b2rk1/ppp2ppp/2np4/2b1p3/2BPP1nq/2N5/PPP1NPPP/R1BQ1RK1 w - - 0 1",orientation:"w",accept:["h2h3","c4f7"],bestNote:"h3! — the clean answer: it slams the h-file shut in front of the queen and attacks the knight on g4, and since the g2 pawn defends h3, the queen can't grab it. (The check Bxf7+ also works — it buys the tempo to play h3 next move.) Why was …Qxh2 mate? Your king couldn't capture the queen — the knight on g4 guards h2 — and h1 and f1 were covered or blocked. Middlegame rule: when the enemy queen and a second piece cluster on one pawn beside your king, that pawn is the whole position — answer the threat before anything else.",mistakes:[{uci:["g2g3"],category:"Ignoring the threat",explanation:"g3?? feels like a defense — it attacks the queen — but it loses on the spot: Black plays …Qxh2# anyway. Checkmate doesn't care that the queen was attacked; the game ends before your pawn can recapture anything. Your king still can't take the queen (the knight on g4 guards h2) and still has no flight square. A defense must actually stop the mating move: block the queen's path, defend the target square, or give check yourself."},{uci:["c4d3","c4b3","c4b5","c4d5"],category:"Ignoring the threat",explanation:"Moving the bishop ignores a mate in one: Black plays …Qxh2#. The queen captures on h2 with check, your king cannot take her because the knight on g4 guards that square, and h1 and f1 are covered or occupied. When mate is threatened, moves that don't address it are just losses with extra steps."},{test:"allowsFork",category:"Allowing a fork",explanation:"That move lets Black's knight jump to e3 next, forking your queen and rook (with the mate still looming behind it). Middlegame defense is a checklist: mate threats first, then forks, then free pieces. This failed the second check."},{test:"hangs",category:"Hanging piece",explanation:"That move hangs a piece — Black simply captures it. And the …Qxh2 mate threat is still on the board. Two problems, one move: when you are under threat, every candidate move must answer the threat AND keep your pieces safe."}],genericBad:"That doesn't answer Black's real threat. Queen on h4, knight on g4 — both are aimed at h2, and …Qxh2 is checkmate. Find a move that defends h2, blocks the queen's path, or drives the queen away."}],
+endgame:[
+{id:"endgame-technique",title:"King first, pawn second",goal:"White to move in a king-and-pawn ending. Your e-pawn wants to promote, but only one first move wins. Find it.",fen:"8/4k3/8/4P3/4K3/8/8/8 w - - 0 1",orientation:"w",accept:["e4d4","e4f4"],bestNote:"A king move — perfect technique. Your king steps up toward the squares in front of the pawn, ready to shoulder Black's king away from the queening path. With the king leading, the pawn follows safely behind its bodyguard: this is the opposition at work.",mistakes:[{uci:["e5e6"],category:"Pushing the pawn too early",explanation:"e6? looks natural — the pawn advances! But it runs ahead of its bodyguard: Black's king steps up, blockades the pawn or captures it, and your king is stranded behind it instead of in front. The ending slips from winning to drawn. In pawn endings the king must reach the squares in FRONT of the pawn before the pawn advances. King first, pawn second."},{uci:["e4e3","e4f3","e4d3"],category:"Retreating the king",explanation:"Retreating the king gives Black's king the race: it reaches e6/d6 first, sits in front of your pawn, and the opposition — and the win — is gone. In king-and-pawn endings, distance is everything and backward king moves spend the one resource you can't recover: tempi."}],genericBad:"That move doesn't win. The whole ending turns on one question: whose king controls the squares in front of the pawn? Move your king toward those squares — never the pawn first, never the king backward."},
+{id:"endgame-rook-push",title:"Rook behind the passed pawn",goal:"White to move. Your a-pawn is passed and ready to run. Find the rook move that escorts it all the way home.",fen:"8/8/3k4/8/P7/8/6K1/R7 w - - 0 1",orientation:"w",accept:["a1a3","a1a2"],bestNote:"Ra3! (Ra2 works too) — the rook steps BEHIND the passed pawn. From there it supports every step of the march (a5, a6, a7), Black's king can never attack the pawn without the rook defending it, and the pawn promotes or wins Black's rook. 'Rooks belong behind passed pawns' — yours to push, theirs to chase.",mistakes:[{uci:["a4a5"],category:"Pushing the pawn too early",explanation:"Pushing a5 first lets Black's king sprint: …Kc5 and …Kb5/Kxa5 paths open because your rook on a1 defends the pawn only along the file it has already left behind. Worse, your rook now blocks nothing and supports nothing. Escort first — rook behind the pawn — then march."},{uci:["a1d1","a1e1","a1f1","a1g1","a1h1","a1b1","a1c1"],category:"Passive rook",explanation:"Sliding the rook along the back rank neither escorts the pawn nor cuts off Black's king — it just waits while Black's king walks toward your pawn. A rook's best endgame squares are behind a passed pawn or on an open file cutting the enemy king off. Passive rook moves in endings are how wins become draws."},{test:"hangs",category:"Hanging piece",explanation:"That move puts your rook (or pawn) where Black's king simply captures it. In endings the king is a fighting piece — always check whether the enemy king can walk up and take what you just moved."}],genericBad:"The pawn can't make it alone — Black's king is too close. Your rook has one job in this ending: get behind the pawn and push it home step by step."}]};
+const FREEPLAY={
+opening:{title:"Open play: a full game from move one",prompt:"Play a complete game as White against a casual-strength computer. Your only assignment: apply the opening checklist for the first ten moves — center, development, castle, connect rooks — then play the position you built.",fen:START_FEN,orientation:"w",opponentLevel:1,levelLabel:"Casual",goalNote:"Focus: castle by move 10 and finish development before attacking."},
+middlegame:{title:"Open play: a sharp middlegame",prompt:"You take White in a Sicilian-flavored middlegame against a stronger computer. Development is done; the game will be decided by tactics and plans. Run the checks–captures–threats scan on every move.",fen:"r2q1rk1/pp1bppbp/2np1np1/8/3NP3/2N1BP2/PPP3PP/R2QKB1R w KQ - 3 8",orientation:"w",opponentLevel:2,levelLabel:"Club",goalNote:"Focus: spot every fork and pin; improve your worst piece between tactics."},
+endgame:{title:"Open play: convert the ending",prompt:"You are White and up a pawn's worth of position in a rook ending against the strongest setting. Activate your king, create a passed pawn, put your rook behind it — and convert.",fen:"8/1p3k2/p3p3/2P5/1P1KP3/P7/5R2/8 w - - 0 1",orientation:"w",opponentLevel:2,levelLabel:"Club",goalNote:"Focus: king activation and the passed pawn — rook behind it, always."}};
+const FOCUS_TIPS={"Hanging piece":"Before confirming any move, ask: 'What of mine is attacked after this?' A ten-second scan kills this mistake.","Missed tactic":"Run the checks–captures–threats scan every move, and check every knight landing square near the enemy king for a double attack.","King safety":"Castle on schedule and treat f2/f7 as alarm bells — a square defended only by the king is a target, not a shield.","Early queen sortie":"Develop minor pieces first. The queen comes out when it wins something concrete, not to feel active.","Releasing the tension":"Central tension is an asset. Hold it until a trade clearly favors you — the defender thanks you when you release it.","Development order":"Knights before bishops, and every new piece gets a job: defend the center, attack something, or prepare castling.","Trading when a tactic wins more":"Before exchanging, finish the forcing scan — sometimes the same target falls with a much bigger prize attached.","Ignoring the threat":"When two enemy pieces aim at one square near your king, that threat outranks every plan of your own. Answer it first.","Allowing a fork":"Track enemy knights like weather. After each of your candidate moves, check their jumps for double attacks on king, queen, and rooks.","Pushing the pawn too early":"King first, pawn second. In pawn endings, get your king to the squares in front of the pawn before the pawn moves.","Retreating the king":"Endgame tempi are gold. A backward king move spends the race to the key squares — and the race is the ending.","Passive rook":"Rooks go behind passed pawns or onto cut-off lines. A rook that only waits is how wins quietly become draws.","Suboptimal move":"Compare your candidate against the position's main idea before committing — the alerted exercises name that idea in the goal line."};
+</script>
+<script>
+/* ============ App state (saved on this device) ============ */
+const STORAGE_KEY="chess-trainer-shareable-progress-v1";
+function loadSavedProgress(){try{const raw=window.localStorage.getItem(STORAGE_KEY);if(!raw)return{completed:[],attempts:[]};const data=JSON.parse(raw);return{completed:Array.isArray(data.completed)?data.completed.filter(function(k){return typeof k==="string";}):[],attempts:Array.isArray(data.attempts)?data.attempts:[]};}catch(e){return{completed:[],attempts:[]};}}
+const _savedProgress=loadSavedProgress();
+const progress={completed:new Set(_savedProgress.completed),attempts:_savedProgress.attempts.slice()};
+function saveProgress(){try{window.localStorage.setItem(STORAGE_KEY,JSON.stringify({completed:Array.from(progress.completed),attempts:progress.attempts}));}catch(e){}}
+function clearSavedProgress(){try{window.localStorage.removeItem(STORAGE_KEY);}catch(e){}}
+function phaseKey(s,p){return s+":"+p;}
+function completePhase(s,p){const k=phaseKey(s,p);if(!progress.completed.has(k)){progress.completed.add(k);saveProgress();}updateNav();}
+function recordAttempt(a){progress.attempts.push(Object.assign({created_at:Date.now()},a));saveProgress();}
+function updateNav(){document.getElementById("navCount").textContent=progress.completed.size+"/12 phases";}
+let view={name:"home"}; let phaseChoice={};
+const app=document.getElementById("app");
+document.getElementById("navHome").addEventListener("click",function(){view={name:"home"};render();});
+document.getElementById("navStats").addEventListener("click",function(){view={name:"stats"};render();});
+
+/* ============ Board ============ */
+function squareXY(sq,orientation){const f=sq%8,row=Math.floor(sq/8);return{x:(orientation==="w"?f:7-f)*100,y:(orientation==="w"?row:7-row)*100};}
+function buildBoard(state,opts){
+  opts=opts||{};const orientation=opts.orientation||"w";
+  const wrap=el("div","board-wrap"+(opts.small?" small":""));
+  const frame=el("div","board-frame");
+  const grid=el("div","board-grid");grid.setAttribute("role","grid");grid.setAttribute("aria-label","Chess board");
+  const ranks=orientation==="w"?[8,7,6,5,4,3,2,1]:[1,2,3,4,5,6,7,8];
+  const files=orientation==="w"?[0,1,2,3,4,5,6,7]:[7,6,5,4,3,2,1,0];
+  const kingSq=inCheck(state,state.turn)?findKing(state,state.turn):-1;
+  ranks.forEach(function(rank){files.forEach(function(file){
+    const sq=(8-rank)*8+file;const piece=state.board[sq];const isLight=(file+rank)%2===0;
+    const isSel=opts.selected===sq;const isTarget=(opts.legalTargets||[]).includes(sq);const isCap=isTarget&&piece!=null;
+    const isLast=opts.lastMove&&(opts.lastMove.from===sq||opts.lastMove.to===sq);const isCheckSq=sq===kingSq;const isHi=(opts.highlightSquares||[]).includes(sq);
+    const btn=document.createElement("button");btn.type="button";btn.className="sq";btn.setAttribute("role","gridcell");
+    btn.setAttribute("aria-label",squareName(sq)+(piece?", "+(colorOf(piece)==="w"?"white":"black")+" "+typeOf(piece):""));
+    btn.style.background=isCheckSq?"#d9534a":isSel?"#e8c860":isHi?"#b9d18b":isLast?(isLight?"#e3d184":"#b8b04e"):(isLight?"var(--board-light)":"var(--board-dark)");
+    btn.style.cursor=opts.onSquareClick?"pointer":"default";
+    if(file===(orientation==="w"?0:7)){const c=el("span","coord rank",String(rank));c.style.color=isLight?"#769656":"#ecdcb4";btn.appendChild(c);}
+    if(rank===(orientation==="w"?1:8)){const c=el("span","coord file","abcdefgh"[file]);c.style.color=isLight?"#769656":"#ecdcb4";btn.appendChild(c);}
+    if(isTarget&&!isCap)btn.appendChild(el("span","dot"));
+    if(isCap)btn.appendChild(el("span","ring"));
+    if(piece){const s=el("span","piece "+colorOf(piece),GLYPHS[piece]);btn.appendChild(s);}
+    if(opts.onSquareClick)btn.addEventListener("click",function(){opts.onSquareClick(sq);});
+    grid.appendChild(btn);
+  });});
+  frame.appendChild(grid);
+  if(opts.arrows&&opts.arrows.length){
+    const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");svg.setAttribute("class","arrows");svg.setAttribute("viewBox","0 0 800 800");svg.setAttribute("aria-hidden","true");
+    opts.arrows.forEach(function(a){
+      const fp=squareXY(a.from,orientation),tp=squareXY(a.to,orientation);
+      const x1=fp.x+50,y1=fp.y+50,x2=tp.x+50,y2=tp.y+50;const dx=x2-x1,dy=y2-y1;const len=Math.hypot(dx,dy)||1;const ux=dx/len,uy=dy/len,px=-uy,py=ux;
+      const headLen=44,headHalf=26;const tipX=x2-ux*8,tipY=y2-uy*8;const baseX=tipX-ux*headLen,baseY=tipY-uy*headLen;const sx=x1+ux*14,sy=y1+uy*14;
+      function mk(tag,attrs){const n=document.createElementNS("http://www.w3.org/2000/svg",tag);for(const k in attrs)n.setAttribute(k,attrs[k]);return n;}
+      const g=mk("g",{opacity:"0.92"});
+      g.appendChild(mk("line",{x1:sx,y1:sy,x2:baseX,y2:baseY,stroke:"rgba(0,0,0,0.28)","stroke-width":"26","stroke-linecap":"round"}));
+      g.appendChild(mk("line",{x1:sx,y1:sy,x2:baseX,y2:baseY,stroke:"#1f7a34","stroke-width":"18","stroke-linecap":"round"}));
+      g.appendChild(mk("circle",{cx:x1,cy:y1,r:"13",fill:"#1f7a34",stroke:"rgba(255,255,255,0.9)","stroke-width":"3"}));
+      g.appendChild(mk("polygon",{points:tipX+","+tipY+" "+(baseX+px*headHalf)+","+(baseY+py*headHalf)+" "+(baseX-px*headHalf)+","+(baseY-py*headHalf),fill:"#1f7a34",stroke:"rgba(0,0,0,0.22)","stroke-width":"2","stroke-linejoin":"round"}));
+      svg.appendChild(g);
+    });
+    frame.appendChild(svg);
+  }
+  wrap.appendChild(frame);return wrap;
+}
+function makePlay(stateRef,interactiveFn,onMove){
+  let selected=null,promoPending=null;
+  function legal(){return legalMoves(stateRef.get());}
+  function targets(){if(selected==null)return[];return legal().filter(m=>m.from===selected).map(m=>m.to);}
+  function handleClick(sq){
+    if(!interactiveFn())return;const st=stateRef.get();
+    if(selected!=null){const cands=legal().filter(m=>m.from===selected&&m.to===sq);if(cands.length>1){promoPending={from:selected,to:sq};refreshPromo();return;}if(cands[0]){onMove(cands[0]);return;}}
+    const piece=st.board[sq];selected=(piece&&colorOf(piece)===st.turn)?sq:null;refreshBoardOnly();
+  }
+  let refreshBoardOnly=function(){};let refreshPromo=function(){};
+  return{getSelected:function(){return selected;},targets:targets,getPromo:function(){return promoPending;},
+    handleClick:handleClick,setRefresh:function(a,b){refreshBoardOnly=a;refreshPromo=b;},
+    choosePromotion:function(promo){if(!promoPending)return;const mv=legal().find(m=>m.from===promoPending.from&&m.to===promoPending.to&&m.promo===promo);promoPending=null;if(mv)onMove(mv);},
+    resetSel:function(){selected=null;promoPending=null;}};
+}
+function promoPicker(color,onChoose){
+  const wrap=el("div");wrap.style.cssText="margin-top:.75rem;display:flex;align-items:center;justify-content:center;gap:.5rem";wrap.setAttribute("role","group");wrap.setAttribute("aria-label","Choose promotion piece");
+  wrap.appendChild(el("span","dim","Promote to:"));
+  const pieces=color==="w"?["Q","R","B","N"]:["q","r","b","n"];
+  pieces.forEach(function(p){const b=document.createElement("button");b.type="button";b.style.cssText="width:2.75rem;height:2.75rem;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);background:var(--surface-2);border-radius:.5rem;font-size:1.8rem";b.textContent=GLYPHS[p];b.setAttribute("aria-label","Promote to "+typeOf(p));b.addEventListener("click",function(){onChoose(p.toUpperCase());});wrap.appendChild(b);});
+  return wrap;
+}
+function coachPanel(html,tone){
+  const d=el("div","coach"+(tone?" "+tone:""));if(tone==="alert")d.setAttribute("role","alert");
+  const p=el("p");p.innerHTML=html;d.appendChild(p);return d;
+}
+
+/* ============ Blunder tests ============ */
+function testBlunder(test,state,move){
+  const next=applyMove(state,move);const mover=state.turn;const enemy=next.turn;
+  if(test==="hangs"){const piece=next.board[move.to];if(!piece||typeOf(piece)==="K")return false;return isSquareAttacked(next,move.to,enemy)&&!isSquareAttacked(next,move.to,mover);}
+  if(test==="allowsCapture"){return legalMoves(next).some(function(em){const victim=next.board[em.to];if(!victim||colorOf(victim)!==mover||typeOf(victim)==="K")return false;const vv=PIECE_VALUES[typeOf(victim)]||0;if(vv<300)return false;const att=next.board[em.from];const av=att?(PIECE_VALUES[typeOf(att)]||0):0;if(av<vv)return true;const after=applyMove(next,em);return !isSquareAttacked(after,em.to,mover);});}
+  return legalMoves(next).some(function(em){const piece=next.board[em.from];if(!piece||typeOf(piece)!=="N")return false;const after=applyMove(next,em);let t=0;for(let sq=0;sq<64;sq++){const tt=after.board[sq];if(tt&&colorOf(tt)===mover&&["K","Q","R"].includes(typeOf(tt))&&isSquareAttacked(after,sq,enemy))t++;}return t>=2;});
+}
+function evaluateAlertedMove(ex,state,move){
+  const uci=toUci(move);if(ex.accept.includes(uci))return{ok:true};
+  for(const r of ex.mistakes)if(r.uci&&r.uci.includes(uci))return{ok:false,category:r.category,explanation:r.explanation};
+  for(const r of ex.mistakes)if(r.test&&testBlunder(r.test,state,move))return{ok:false,category:r.category,explanation:r.explanation};
+  return{ok:false,category:"Suboptimal move",explanation:ex.genericBad};
+}
+
+/* ============ Views ============ */
+function render(){
+  if(window.speechSynthesis)speechSynthesis.cancel();
+  document.getElementById("navHome").classList.toggle("active",view.name!=="stats");
+  document.getElementById("navStats").classList.toggle("active",view.name==="stats");
+  updateNav();app.innerHTML="";
+  if(view.name==="stats")renderStats();
+  else if(view.name==="stage")renderStage(view.stage);
+  else renderHome();
+  window.scrollTo({top:0});
+}
+function renderHome(){
+  const h=el("h1",null,"Learn chess the way games are actually played.");h.style.cssText="font-size:1.9rem;font-weight:600;line-height:1.25";app.appendChild(h);
+  const intro=el("p","dim","Every chess game has three acts — the opening, the middlegame, and the endgame — and each needs its own skills. Train each stage in four phases: learn the strategy, play it guided step by step, play again with a coach flagging your mistakes, then play freely.");intro.style.cssText="margin-top:.6rem;max-width:36rem;line-height:1.65";app.appendChild(intro);
+  app.appendChild(listenBtn("Learn chess the way games are actually played. Every chess game has three acts — the opening, the middlegame, and the endgame — and each needs its own skills. Train each stage in four phases: learn the strategy, play it guided step by step, play again with a coach flagging your mistakes, then play freely.","the introduction"));
+  const sec=el("section","card");sec.style.marginTop="1.5rem";
+  sec.appendChild(el("h2",null,"Four phases, every stage"));sec.querySelector("h2").style.fontSize="1.25rem";
+  const ol=el("ol");ol.style.cssText="margin-top:.6rem;padding-left:1.2rem;line-height:1.8;font-size:.95rem";
+  PHASE_ORDER.forEach(function(p,i){const li=el("li");li.innerHTML="<strong>Phase "+(i+1)+": "+PHASE_META[p].name+"</strong> — "+PHASE_META[p].short;ol.appendChild(li);});
+  sec.appendChild(ol);app.appendChild(sec);
+  STAGES.forEach(function(stage){
+    const art=el("article","card");art.style.marginTop="1rem";
+    const top=el("div");top.style.cssText="display:flex;flex-wrap:wrap;justify-content:space-between;gap:.5rem;align-items:baseline";
+    const t=el("h2",null,stage.name);t.style.fontSize="1.5rem";top.appendChild(t);
+    const tag=el("span",null,stage.tagline);tag.style.cssText="color:var(--brass);font-weight:600;font-size:.9rem";top.appendChild(tag);art.appendChild(top);
+    const ip=el("p","dim",stage.intro);ip.style.cssText="margin-top:.4rem;line-height:1.6";art.appendChild(ip);
+    art.appendChild(listenBtn(stage.intro,"the introduction to "+stage.name));
+    const row=el("div");row.style.cssText="display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.9rem";
+    PHASE_ORDER.forEach(function(p){const done=progress.completed.has(phaseKey(stage.id,p));const b=document.createElement("button");b.type="button";b.className="pillbtn"+(done?" done":"");b.textContent=(done?"✓ ":"")+PHASE_META[p].name;b.addEventListener("click",function(){openStage(stage.id,p);});row.appendChild(b);});
+    art.appendChild(row);
+    const doneCount=PHASE_ORDER.filter(p=>progress.completed.has(phaseKey(stage.id,p))).length;
+    const nextPhase=PHASE_ORDER.find(p=>!progress.completed.has(phaseKey(stage.id,p)));
+    const cta=document.createElement("button");cta.type="button";cta.className="btn-accent";cta.style.marginTop="1rem";
+    cta.textContent=doneCount===0?("Start "+stage.name.toLowerCase()):doneCount>=4?("Review "+stage.name.toLowerCase()):("Continue: "+(nextPhase?PHASE_META[nextPhase].name:""));
+    cta.addEventListener("click",function(){openStage(stage.id,nextPhase);});art.appendChild(cta);
+    app.appendChild(art);
+  });
+  if(progress.completed.size===0){const note=el("p","dim","New to chess training? Start with The Opening — the other stages build on it.");note.style.cssText="text-align:center;margin-top:1.5rem;font-size:.9rem";app.appendChild(note);}
+  const det=document.createElement("details");det.className="install";det.style.marginTop="1.5rem";
+  const sum=el("summary",null,"Add this trainer to your home screen");det.appendChild(sum);
+  const ol2=el("ol");
+  ol2.innerHTML="<li><strong>Android (Chrome):</strong> tap the ⋮ menu, then “Add to Home screen” or “Install app.”</li><li><strong>iPhone (Safari):</strong> tap Share, then “Add to Home Screen.”</li><li>It opens full-screen like an app. Your progress saves on this device and is still here when you come back — you can clear it any time from My stats → Reset progress.</li>";
+  det.appendChild(ol2);app.appendChild(det);
+}
+function openStage(stage,phase){if(phase)phaseChoice[stage]=phase;view={name:"stage",stage:stage};render();}
+function activePhaseFor(stage){if(phaseChoice[stage])return phaseChoice[stage];return PHASE_ORDER.find(p=>!progress.completed.has(phaseKey(stage,p)))||"tutorial";}
+function renderStage(stage){
+  const meta=STAGES.find(s=>s.id===stage);const phase=activePhaseFor(stage);
+  const h=el("h2",null,meta.name);h.style.fontSize="1.9rem";app.appendChild(h);
+  const ip=el("p","dim",meta.intro);ip.style.cssText="margin-top:.3rem;line-height:1.6";app.appendChild(ip);
+  app.appendChild(listenBtn(meta.intro,"the introduction to "+meta.name));
+  const tabs=el("div","phase-tabs");tabs.setAttribute("role","tablist");tabs.setAttribute("aria-label",meta.name+" phases");
+  PHASE_ORDER.forEach(function(p,i){const done=progress.completed.has(phaseKey(stage,p));const b=document.createElement("button");b.type="button";b.className="phase-tab"+(p===phase?" active":"");b.setAttribute("role","tab");b.setAttribute("aria-selected",p===phase?"true":"false");
+    b.innerHTML='<span class="pt-k">Phase '+(i+1)+(done?" · done ✓":"")+'</span><span class="pt-n">'+PHASE_META[p].name+"</span>";
+    b.addEventListener("click",function(){phaseChoice[stage]=p;render();});tabs.appendChild(b);});
+  app.appendChild(tabs);
+  const sub=el("p","dim",PHASE_META[phase].short);sub.style.cssText="margin-top:.4rem;font-size:.9rem";app.appendChild(sub);
+  const body=el("div");body.style.marginTop="1rem";app.appendChild(body);
+  if(phase==="tutorial")renderTutorial(body,stage);
+  else if(phase==="guided")renderGuidedPlayer(body,stage);
+  else if(phase==="alerted")renderAlertedPlayer(body,stage);
+  else renderFreePlay(body,stage);
+  const phaseIdx=PHASE_ORDER.indexOf(phase);const nextPhase=PHASE_ORDER[phaseIdx+1];
+  if(progress.completed.has(phaseKey(stage,phase))&&nextPhase){const b=document.createElement("button");b.type="button";b.className="btn-accent";b.style.cssText="margin-top:1.75rem;width:100%";b.textContent="Continue to phase "+(phaseIdx+2)+": "+PHASE_META[nextPhase].name+" →";b.addEventListener("click",function(){phaseChoice[stage]=nextPhase;render();});app.appendChild(b);}
+}
+/* Tutorial */
+function renderTutorial(container,stage){
+  const lesson=LESSONS[stage];const done=progress.completed.has(phaseKey(stage,"tutorial"));
+  const h=el("h3",null,lesson.title);h.style.fontSize="1.5rem";container.appendChild(h);
+  const ip=el("p","dim",lesson.intro);ip.style.cssText="margin-top:.5rem;line-height:1.65";container.appendChild(ip);
+  container.appendChild(listenBtn(lesson.title+". "+lesson.intro,"the introduction to "+lesson.title));
+  lesson.sections.forEach(function(sec){
+    const s=el("section");s.style.marginTop="1.75rem";
+    const sh=el("h4",null,sec.heading);sh.style.fontSize="1.15rem";s.appendChild(sh);
+    const bp=el("p",null,sec.body);bp.style.cssText="margin-top:.4rem;line-height:1.65";s.appendChild(bp);
+    s.appendChild(listenBtn(sec.heading+". "+sec.body,"the section "+sec.heading));
+    if(sec.fen){const bw=el("div");bw.style.marginTop=".75rem";bw.appendChild(buildBoard(parseFEN(sec.fen),{orientation:"w",small:true}));s.appendChild(bw);}
+    if(sec.tip){const tp=el("p","tip");tp.innerHTML="<strong>Club tip:</strong> "+sec.tip;s.appendChild(tp);}
+    container.appendChild(s);
+  });
+  const recap=el("div");recap.style.cssText="margin-top:2rem;background:var(--surface-2);border-radius:.6rem;padding:1rem";
+  recap.appendChild(el("h4",null,"Remember"));
+  const ul=el("ul");ul.style.cssText="margin-top:.5rem;padding-left:1.2rem;line-height:1.7;font-size:.95rem";
+  lesson.recap.forEach(function(line){ul.appendChild(el("li",null,line));});recap.appendChild(ul);
+  recap.appendChild(listenBtn("Remember. "+lesson.recap.join(" "),"the lesson recap"));
+  container.appendChild(recap);
+  const b=document.createElement("button");b.type="button";b.className="btn-accent";b.style.cssText="margin-top:1.25rem;width:100%";b.disabled=done;if(done)b.style.opacity=".6";
+  b.textContent=done?"Tutorial complete ✓":"Mark tutorial complete";
+  b.addEventListener("click",function(){completePhase(stage,"tutorial");render();});container.appendChild(b);
+}
+/* Guided */
+function renderGuidedPlayer(container,stage){
+  const exercises=GUIDED[stage];let idx=0;
+  function show(){
+    container.innerHTML="";
+    if(idx>=exercises.length){
+      const panel=coachPanel("<strong>Guided play complete for this stage.</strong> Both lines are in your fingers now. Move on to alerted play to try finding the moves without the script — or run the lines again any time.","good");
+      const b=document.createElement("button");b.type="button";b.className="btn-outline";b.style.marginTop=".75rem";b.textContent="Replay guided lines";b.addEventListener("click",function(){idx=0;show();});panel.appendChild(b);container.appendChild(panel);return;
+    }
+    const p=el("p","dim","Exercise "+(idx+1)+" of "+exercises.length);p.style.fontSize=".9rem";container.appendChild(p);
+    const holder=el("div");holder.style.marginTop=".5rem";container.appendChild(holder);
+    guidedSession(holder,stage,exercises[idx],idx+1>=exercises.length?"Finish guided play":"Next exercise",function(){
+      if(idx+1>=exercises.length){completePhase(stage,"guided");idx=exercises.length;show();updateNav();}
+      else{idx++;show();}
+    });
+  }
+  show();
+}
+function guidedSession(container,stage,exercise,finishLabel,onFinish){
+  let state=parseFEN(exercise.fen);let stepIdx=0;let coachNote=exercise.intro;let wrongNote=null;let lastMove=null;let timer=null;
+  const title=el("h4",null,exercise.title);title.style.fontSize="1.3rem";container.appendChild(title);
+  container.appendChild(listenBtn(exercise.title+". "+exercise.intro,"the instructions for "+exercise.title));
+  const boardHolder=el("div");boardHolder.style.marginTop=".75rem";container.appendChild(boardHolder);
+  const promoHolder=el("div");container.appendChild(promoHolder);
+  const coachHolder=el("div");container.appendChild(coachHolder);
+  const play=makePlay({get:function(){return state;}},function(){const c=exercise.steps[stepIdx];return stepIdx<exercise.steps.length&&c&&!c.opponent;},function(move){
+    const current=exercise.steps[stepIdx];if(!current)return;const expected=parseUci(current.uci);
+    const matches=move.from===expected.from&&move.to===expected.to&&(move.promo||"Q")===(expected.promo||"Q");
+    if(matches){recordAttempt({stage:stage,phase:"guided",exerciseId:exercise.id,correct:true});sfxSuccess();state=applyMove(state,move);lastMove={from:move.from,to:move.to};coachNote=current.coach;wrongNote=null;stepIdx++;play.resetSel();draw();scheduleOpponent();}
+    else{recordAttempt({stage:stage,phase:"guided",exerciseId:exercise.id,correct:false,mistake:"Played "+moveToSan(state,move)+" instead of the guided move "+moveToSan(state,expected)+"."});sfxWarning();wrongNote="Not quite — in this line the move is "+moveToSan(state,expected)+". Follow the green arrow on the board: it shows the piece to move and where it goes.";draw();}
+  });
+  play.setRefresh(function(){drawBoard();},function(){draw();});
+  function current(){return exercise.steps[stepIdx];}
+  function finished(){return stepIdx>=exercise.steps.length;}
+  function drawBoard(){
+    boardHolder.innerHTML="";const cur=current();const exp=(!finished()&&cur&&!cur.opponent)?parseUci(cur.uci):null;
+    boardHolder.appendChild(buildBoard(state,{orientation:exercise.orientation,selected:play.getSelected(),legalTargets:play.targets(),lastMove:lastMove,highlightSquares:exp?[exp.from]:[],arrows:exp?[{from:exp.from,to:exp.to}]:[],onSquareClick:play.handleClick}));
+    promoHolder.innerHTML="";if(play.getPromo())promoHolder.appendChild(promoPicker(state.turn,function(p){play.choosePromotion(p);draw();}));
+  }
+  function draw(){
+    drawBoard();coachHolder.innerHTML="";
+    const panel=el("div","coach");const cp=el("p");cp.innerHTML="<strong>Coach:</strong> "+coachNote;panel.appendChild(cp);
+    if(!finished()&&current()&&!current().opponent){const hint=el("p","dim","Your move — follow the green arrow: tap the piece at the start of the arrow, then its destination at the arrowhead.");hint.style.cssText="margin-top:.5rem;font-size:.88rem";panel.appendChild(hint);}
+    if(!finished()&&current()&&current().opponent){const o=el("p","dim","Opponent is replying…");o.style.cssText="margin-top:.5rem;font-size:.88rem";panel.appendChild(o);}
+    coachHolder.appendChild(panel);
+    if(wrongNote)coachHolder.appendChild(coachPanel(wrongNote,"alert"));
+    if(finished()){const done=coachPanel("<strong>Line complete.</strong> You played the whole idea through — that sequence is now yours to reuse in real games.","good");const b=document.createElement("button");b.type="button";b.className="btn-accent";b.style.marginTop=".75rem";b.textContent=finishLabel;b.addEventListener("click",onFinish);done.appendChild(b);coachHolder.appendChild(done);}
+  }
+  function scheduleOpponent(){
+    const cur=current();if(finished()||!cur||!cur.opponent)return;
+    if(timer)clearTimeout(timer);
+    timer=setTimeout(function(){const mv=parseUci(cur.uci);state=applyMove(state,mv);sfxMove();lastMove={from:mv.from,to:mv.to};coachNote=cur.coach;wrongNote=null;stepIdx++;play.resetSel();draw();scheduleOpponent();},1050);
+  }
+  draw();scheduleOpponent();
+}
+/* Alerted */
+function renderAlertedPlayer(container,stage){
+  const exercises=ALERTED[stage];let idx=0;
+  function show(){
+    container.innerHTML="";
+    if(idx>=exercises.length){
+      const panel=coachPanel("<strong>Alerted play complete for this stage.</strong> Every flagged mistake you made here is now on your stats page, grouped by skill area — that's your personal drill list.","good");
+      const b=document.createElement("button");b.type="button";b.className="btn-outline";b.style.marginTop=".75rem";b.textContent="Replay the positions";b.addEventListener("click",function(){idx=0;show();});panel.appendChild(b);container.appendChild(panel);return;
+    }
+    const p=el("p","dim","Position "+(idx+1)+" of "+exercises.length);p.style.fontSize=".9rem";container.appendChild(p);
+    const holder=el("div");holder.style.marginTop=".5rem";container.appendChild(holder);
+    alertedSession(holder,stage,exercises[idx],idx+1>=exercises.length?"Finish alerted play":"Next position",function(){
+      if(idx+1>=exercises.length){completePhase(stage,"alerted");idx=exercises.length;show();updateNav();}else{idx++;show();}
+    });
+  }
+  show();
+}
+function alertedSession(container,stage,exercise,finishLabel,onFinish){
+  let state=parseFEN(exercise.fen);let alertInfo=null;let solved=false;let awaiting=false;let mistakes=0;let hint=false;let lastMove=null;
+  const title=el("h4",null,exercise.title);title.style.fontSize="1.3rem";container.appendChild(title);
+  const goal=el("p","dim",exercise.goal);goal.style.cssText="margin-top:.4rem;line-height:1.6";container.appendChild(goal);
+  container.appendChild(listenBtn(exercise.title+". "+exercise.goal,"the goal for "+exercise.title));
+  const boardHolder=el("div");boardHolder.style.marginTop=".75rem";container.appendChild(boardHolder);
+  const promoHolder=el("div");container.appendChild(promoHolder);
+  const panelHolder=el("div");container.appendChild(panelHolder);
+  const play=makePlay({get:function(){return state;}},function(){return !solved&&!awaiting;},function(move){
+    const verdict=evaluateAlertedMove(exercise,state,move);
+    if(verdict.ok){recordAttempt({stage:stage,phase:"alerted",exerciseId:exercise.id,correct:true});sfxSuccess();alertInfo=null;state=applyMove(state,move);lastMove={from:move.from,to:move.to};awaiting=true;play.resetSel();draw();
+      setTimeout(function(){const reply=opponentMove(state,1);if(reply){state=applyMove(state,reply);sfxMove();lastMove={from:reply.from,to:reply.to};}awaiting=false;solved=true;draw();},1000);
+    }else{recordAttempt({stage:stage,phase:"alerted",exerciseId:exercise.id,correct:false,category:verdict.category,mistake:moveToSan(state,move)+" — "+verdict.explanation});sfxWarning();mistakes++;alertInfo={category:verdict.category,explanation:verdict.explanation};draw();}
+  });
+  play.setRefresh(function(){drawBoard();},function(){draw();});
+  function showCorrection(){return (alertInfo!=null||hint)&&!solved&&!awaiting;}
+  function drawBoard(){
+    boardHolder.innerHTML="";const sc=showCorrection();
+    const arrows=sc?exercise.accept.map(function(u){const m=parseUci(u);return{from:m.from,to:m.to};}):[];
+    const hi=sc?exercise.accept.map(function(u){return parseUci(u).from;}):(hint&&exercise.accept[0]?[parseUci(exercise.accept[0]).from]:[]);
+    boardHolder.appendChild(buildBoard(state,{orientation:exercise.orientation,selected:play.getSelected(),legalTargets:play.targets(),lastMove:lastMove,highlightSquares:hi,arrows:arrows,onSquareClick:play.handleClick}));
+    promoHolder.innerHTML="";if(play.getPromo())promoHolder.appendChild(promoPicker(state.turn,function(p){play.choosePromotion(p);draw();}));
+  }
+  function draw(){
+    drawBoard();panelHolder.innerHTML="";
+    if(alertInfo&&!solved){const p=coachPanel("<strong>⚠ "+alertInfo.category+".</strong> "+alertInfo.explanation,"alert");const extra=el("p","The move was not played — follow the green arrow on the board to play the correct move.");extra.style.cssText="margin-top:.5rem;font-size:.88rem";p.appendChild(extra);panelHolder.appendChild(p);}
+    if(awaiting)panelHolder.appendChild(coachPanel("<strong>That's the move.</strong> Waiting for the opponent's reply…"));
+    if(solved){const p=coachPanel("<strong>Solved"+(mistakes>0?(" after "+mistakes+" flagged move"+(mistakes>1?"s":"")):" on the first try")+".</strong> "+exercise.bestNote,"good");const b=document.createElement("button");b.type="button";b.className="btn-accent";b.style.marginTop=".75rem";b.textContent=finishLabel;b.addEventListener("click",onFinish);p.appendChild(b);panelHolder.appendChild(p);}
+    if(!solved&&!awaiting){const hb=document.createElement("button");hb.type="button";hb.className="btn-outline";hb.style.marginTop=".75rem";hb.disabled=showCorrection();if(hb.disabled)hb.style.opacity=".55";hb.textContent=showCorrection()?"Hint shown — follow the green arrow to the correct move":"Need a hint?";hb.addEventListener("click",function(){hint=true;draw();});panelHolder.appendChild(hb);
+      if(hint&&!alertInfo) {const hp=el("p","dim","The green arrow shows the piece to move and where it goes.");hp.style.cssText="margin-top:.5rem;font-size:.88rem";panelHolder.appendChild(hp);}}
+  }
+  draw();
+}
+/* Free play */
+function renderFreePlay(container,stage){
+  const config=FREEPLAY[stage];let state=parseFEN(config.fen);let sans=[];let lastMove=null;let resigned=false;let userMoves=0;let phaseDone=false;let endPlayed=false;
+  const title=el("h4",null,config.title);title.style.fontSize="1.3rem";container.appendChild(title);
+  const pr=el("p","dim",config.prompt);pr.style.cssText="margin-top:.4rem;line-height:1.6";container.appendChild(pr);
+  const badge=el("p",null,"Opponent: "+config.levelLabel+" · "+config.goalNote);badge.style.cssText="display:inline-block;margin-top:.6rem;background:var(--surface-2);border-radius:999px;padding:.3rem .8rem;font-size:.88rem;font-weight:500";container.appendChild(badge);
+  container.appendChild(el("div"));container.lastChild.appendChild(listenBtn(config.title+". "+config.prompt,"the free play briefing for "+config.title));
+  const boardHolder=el("div");boardHolder.style.marginTop=".75rem";container.appendChild(boardHolder);
+  const promoHolder=el("div");container.appendChild(promoHolder);
+  const infoHolder=el("div");container.appendChild(infoHolder);
+  const userColor=config.orientation;
+  function isOver(){const st=gameStatus(state);return resigned||st==="checkmate"||st==="stalemate";}
+  const play=makePlay({get:function(){return state;}},function(){return !isOver()&&state.turn===userColor;},function(move){
+    sfxMove();sans.push(moveToSan(state,move));state=applyMove(state,move);lastMove={from:move.from,to:move.to};userMoves++;
+    if(userMoves>=6&&!phaseDone){phaseDone=true;sfxSuccess();completePhase(stage,"freeplay");}
+    play.resetSel();draw();maybeOpponent();
+  });
+  play.setRefresh(function(){drawBoard();},function(){draw();});
+  function maybeOpponent(){
+    if(isOver()||state.turn===userColor)return;
+    setTimeout(function(){const mv=opponentMove(state,config.opponentLevel);if(!mv){draw();return;}sans.push(moveToSan(state,mv));state=applyMove(state,mv);sfxMove();lastMove={from:mv.from,to:mv.to};draw();},1000);
+  }
+  function drawBoard(){boardHolder.innerHTML="";boardHolder.appendChild(buildBoard(state,{orientation:userColor,selected:play.getSelected(),legalTargets:play.targets(),lastMove:lastMove,onSquareClick:play.handleClick}));promoHolder.innerHTML="";if(play.getPromo())promoHolder.appendChild(promoPicker(state.turn,function(p){play.choosePromotion(p);draw();maybeOpponent();}));}
+  function draw(){
+    drawBoard();const status=gameStatus(state);const over=isOver();
+    if(over&&status==="checkmate"&&!endPlayed){endPlayed=true;if(state.turn===userColor)sfxWarning();else sfxSuccess();}
+    infoHolder.innerHTML="";
+    const bal=materialBalance(state);const userBal=userColor==="w"?bal:-bal;
+    const info=el("div");info.style.cssText="margin-top:.75rem;display:flex;flex-wrap:wrap;gap:.4rem 1.2rem;font-size:.9rem";
+    info.innerHTML="<span>Material: <strong>"+(userBal===0?"level":userBal>0?("you +"+userBal):("opponent +"+(-userBal)))+"</strong></span><span>You captured: "+(capturedBy(state,userColor).length?capturedBy(state,userColor).map(p=>GLYPHS[p]).join(" "):"—")+"</span><span>Lost: "+(capturedBy(state,opposite(userColor)).length?capturedBy(state,opposite(userColor)).map(p=>GLYPHS[p]).join(" "):"—")+"</span>"+(status==="check"&&!over?'<span style="color:var(--alert);font-weight:700">Check!</span>':"");
+    infoHolder.appendChild(info);
+    if(phaseDone&&!over){const d=el("p",null,"✓ Free-play phase complete — six of your own moves played. Finish the game or start a new one.");d.style.cssText="margin-top:.5rem;font-size:.9rem;font-weight:600;color:var(--good)";infoHolder.appendChild(d);}
+    let resultText=null;
+    if(resigned)resultText="You resigned. Start a new game whenever you're ready — every game teaches something.";
+    else if(status==="checkmate")resultText=state.turn===userColor?"Checkmate — the computer wins this one. Replay the game in your head: where did the balance tip?":"Checkmate — you win! You converted the position all the way. That's the whole training loop working.";
+    else if(status==="stalemate")resultText="Stalemate — a draw. The defender's last resource; watch for it when you're ahead.";
+    if(resultText)infoHolder.appendChild(coachPanel(resultText,(status==="checkmate"&&state.turn!==userColor)?"good":undefined));
+    const btnRow=el("div");btnRow.style.cssText="display:flex;gap:.5rem;margin-top:1rem";
+    const nb=document.createElement("button");nb.type="button";nb.className="btn-accent";nb.textContent="New game";nb.addEventListener("click",function(){endPlayed=false;state=parseFEN(config.fen);sans=[];lastMove=null;resigned=false;userMoves=0;play.resetSel();draw();});btnRow.appendChild(nb);
+    if(!over){const rb=document.createElement("button");rb.type="button";rb.className="btn-outline";rb.textContent="Resign";rb.addEventListener("click",function(){resigned=true;draw();});btnRow.appendChild(rb);}
+    infoHolder.appendChild(btnRow);
+    if(sans.length){const mh=el("h5",null,"Moves");mh.style.cssText="font-family:var(--font-display);font-size:1rem;margin-top:1.25rem";infoHolder.appendChild(mh);const grid=el("div","moves-grid");for(let i=0;i<sans.length;i+=2){const li=el("div",null,"");li.innerHTML='<span class="dim">'+(i/2+1)+'.</span> '+sans[i]+(sans[i+1]?" "+sans[i+1]:"");grid.appendChild(li);}infoHolder.appendChild(grid);}
+  }
+  draw();
+}
+/* Stats */
+function renderStats(){
+  const h=el("h2",null,"Your training stats");h.style.fontSize="1.9rem";app.appendChild(h);
+  app.appendChild(listenBtn("Your training stats. Complete phases across the opening, middlegame, and endgame, and your flagged mistakes will show up here as focus areas.","an overview of your training stats"));
+  const attempts=progress.attempts;const total=attempts.length;const correct=attempts.filter(a=>a.correct).length;const accuracy=total>0?Math.round(correct/total*100):null;
+  const grid=el("div","stat-grid");
+  [[progress.completed.size+"/12","phases complete"],[accuracy!=null?accuracy+"%":"—","move accuracy"],[String(total),"training moves"]].forEach(function(pair){const b=el("div","stat-box");const v=el("p",null,pair[0]);v.style.cssText="font-family:var(--font-display);font-size:1.5rem;font-weight:700";b.appendChild(v);const l=el("p","dim",pair[1]);l.style.fontSize=".75rem";b.appendChild(l);grid.appendChild(b);});
+  app.appendChild(grid);
+  const ph=el("h3",null,"Progress by stage");ph.style.cssText="margin-top:2rem;font-size:1.3rem";app.appendChild(ph);
+  STAGE_ORDER.forEach(function(stage){
+    const sa=attempts.filter(a=>a.stage===stage);const sc=sa.filter(a=>a.correct).length;const sacc=sa.length?Math.round(sc/sa.length*100):null;
+    const phasesDone=PHASE_ORDER.filter(p=>progress.completed.has(phaseKey(stage,p))).length;const nextPhase=PHASE_ORDER.find(p=>!progress.completed.has(phaseKey(stage,p)))||"tutorial";
+    const card=el("div","card");card.style.marginTop=".75rem";
+    const top=el("div");top.style.cssText="display:flex;justify-content:space-between;gap:1rem;align-items:baseline";top.innerHTML="<h4 style='font-size:1.15rem'>"+stageName(stage)+"</h4><span class='dim' style='font-size:.88rem'>"+phasesDone+"/4 phases"+(sacc!=null?" · "+sacc+"% accuracy":"")+"</span>";card.appendChild(top);
+    const track=el("div","progress-track");const fill=el("div","progress-fill");fill.style.width=(phasesDone/4*100)+"%";track.appendChild(fill);card.appendChild(track);
+    const row=el("div");row.style.cssText="display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.6rem";
+    PHASE_ORDER.forEach(function(p){const done=progress.completed.has(phaseKey(stage,p));const s=el("span","pill"+(done?" done":""),(done?"✓ ":"")+PHASE_META[p].name);row.appendChild(s);});
+    card.appendChild(row);
+    const btn=document.createElement("button");btn.type="button";btn.style.cssText="margin-top:.75rem;font-weight:600;text-decoration:underline;text-underline-offset:3px;font-size:.92rem";btn.textContent=phasesDone>=4?"Review this stage":("Continue: "+PHASE_META[nextPhase].name+" →");btn.addEventListener("click",function(){openStage(stage,nextPhase);});card.appendChild(btn);
+    app.appendChild(card);
+  });
+  const fh=el("h3",null,"Focus areas");fh.style.cssText="margin-top:2rem;font-size:1.3rem";app.appendChild(fh);
+  const catMap=new Map();
+  attempts.forEach(function(a){if(a.correct||!a.category)return;const e=catMap.get(a.category)||{count:0,byStage:{}};e.count++;e.byStage[a.stage]=(e.byStage[a.stage]||0)+1;catMap.set(a.category,e);});
+  const focus=[...catMap.entries()].map(function(pair){const topStage=Object.entries(pair[1].byStage).sort((a,b)=>b[1]-a[1])[0];return{category:pair[0],count:pair[1].count,topStage:topStage?topStage[0]:null};}).sort((a,b)=>b.count-a.count).slice(0,4);
+  if(total===0){const p=el("p","dim","Nothing here yet — focus areas come from your own flagged moves. Play through a guided or alerted exercise in any stage and your patterns will show up here, ranked by how often each mistake type costs you.");p.style.cssText="margin-top:.5rem;line-height:1.65";app.appendChild(p);}
+  else if(focus.length===0){const p=el("p","dim","No flagged mistakes yet — every training move so far was correct. The alerted-play positions are where mistakes (and focus areas) appear.");p.style.cssText="margin-top:.5rem;line-height:1.65";app.appendChild(p);}
+  else{focus.forEach(function(f){const card=el("div","card");card.style.cssText="margin-top:.75rem;border-left:4px solid var(--alert)";const top=el("div");top.style.cssText="display:flex;justify-content:space-between;gap:1rem;align-items:baseline";top.innerHTML="<h4 style='font-size:1.1rem'>"+f.category+"</h4><span style='color:var(--alert);font-weight:600;font-size:.88rem;white-space:nowrap'>"+f.count+" flagged move"+(f.count>1?"s":"")+"</span>";card.appendChild(top);const tip=el("p",null,FOCUS_TIPS[f.category]||FOCUS_TIPS["Suboptimal move"]);tip.style.cssText="margin-top:.4rem;line-height:1.6";card.appendChild(tip);card.appendChild(listenBtn(FOCUS_TIPS[f.category]||FOCUS_TIPS["Suboptimal move"],"the tip for "+f.category));if(f.topStage){const b=document.createElement("button");b.type="button";b.style.cssText="margin-top:.5rem;font-weight:600;text-decoration:underline;text-underline-offset:3px;font-size:.92rem";b.textContent="Drill it: "+stageName(f.topStage)+" → Alerted play →";b.addEventListener("click",function(){openStage(f.topStage,"alerted");});card.appendChild(b);}app.appendChild(card);});}
+  const recent=attempts.filter(a=>!a.correct&&a.mistake).slice(-6).reverse();
+  if(recent.length){const rh=el("h3",null,"Recent flagged moves");rh.style.cssText="margin-top:2rem;font-size:1.3rem";app.appendChild(rh);const ul=el("ul");ul.style.cssText="list-style:none;padding:0;margin:.75rem 0 0;display:grid;gap:.6rem";recent.forEach(function(a){const li=el("li","card");li.style.padding=".9rem";const s=el("span",null,(a.category||"Mistake")+" · "+stageName(a.stage)+" ("+PHASE_META[a.phase].name+")");s.style.cssText="color:var(--alert);font-weight:700;font-size:.85rem";li.appendChild(s);const p=el("p",null,a.mistake);p.style.cssText="margin-top:.2rem;line-height:1.6;font-size:.95rem";li.appendChild(p);ul.appendChild(li);});app.appendChild(ul);}
+  const resetWrap=el("div","card");resetWrap.style.cssText="margin-top:2.5rem;border-color:var(--alert)";
+  let confirming=false;
+  function drawReset(){resetWrap.innerHTML="";const rh=el("h3",null,"Progress saved on this device");rh.style.fontSize="1.15rem";resetWrap.appendChild(rh);const rd=el("p","dim","Your phases, training moves, accuracy, and flagged moves are saved in this browser on this phone and stay here when you close and reopen the trainer — including from your home-screen icon. Nothing is sent to a server. Use Reset progress below to clear everything and start fresh.");rd.style.cssText="margin-top:.4rem;line-height:1.6;font-size:.95rem";resetWrap.appendChild(rd);
+  if(!confirming){const b=document.createElement("button");b.type="button";b.textContent="Reset progress";b.style.cssText="margin-top:.9rem;background:var(--alert);color:#fff;border-radius:.5rem;padding:.65rem 1.1rem;font-weight:700";b.setAttribute("aria-label","Reset progress");b.addEventListener("click",function(){confirming=true;drawReset();});resetWrap.appendChild(b);}
+  else{const warn=el("p",null,"Erase all saved progress and stats on this device? This can't be undone.");warn.style.cssText="margin-top:.9rem;font-weight:600;line-height:1.55";resetWrap.appendChild(warn);const row=el("div");row.style.cssText="display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;margin-top:.75rem";const y=document.createElement("button");y.type="button";y.style.cssText="background:var(--alert);color:#fff;border-radius:.5rem;padding:.6rem 1rem;font-weight:600";y.textContent="Yes, reset everything";y.addEventListener("click",function(){progress.completed.clear();progress.attempts.length=0;clearSavedProgress();confirming=false;render();window.scrollTo({top:0});});row.appendChild(y);const n=document.createElement("button");n.type="button";n.className="btn-outline";n.textContent="Keep my progress";n.addEventListener("click",function(){confirming=false;drawReset();});row.appendChild(n);resetWrap.appendChild(row);}}
+  drawReset();app.appendChild(resetWrap);
+}
+render();
+</script>
+</body>
+</html>
